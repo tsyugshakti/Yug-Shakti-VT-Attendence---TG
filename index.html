@@ -272,6 +272,203 @@ tbody td{padding:10px 12px;vertical-align:middle}
     </div>
   </div>
 
+/* ── VT DETAILS TAB STYLES ── */
+#vtDetailsPanel{background:var(--bg-vt);min-height:60vh;border-radius:12px;overflow:hidden}
+.vt-inner{padding:18px 16px 40px}
+.vt-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.vt-scard{background:var(--surface);border:1px solid var(--vt-border);border-radius:10px;padding:10px 16px;flex:1;min-width:100px}
+.vt-scard .sv{font-size:1.35rem;font-weight:800;color:var(--ink);font-family:'Segoe UI',sans-serif}
+.vt-scard .sl{font-size:.66rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-top:1px}
+.vt-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.vt-search-wrap{flex:1;min-width:180px;position:relative}
+.vt-search-wrap input{width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--vt-border);border-radius:9px;font-size:.82rem;background:var(--surface);color:var(--ink);outline:none;font-family:inherit}
+.vt-search-wrap input:focus{border-color:var(--vteal);box-shadow:0 0 0 3px rgba(13,148,136,.12)}
+.vt-search-wrap .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.85rem;color:var(--ink3)}
+.vt-sel{padding:8px 10px;border:1.5px solid var(--vt-border);border-radius:9px;font-size:.79rem;background:var(--surface);color:var(--ink);outline:none;cursor:pointer;font-family:inherit}
+.vt-sel:focus{border-color:var(--vteal)}
+.vt-export-btn{padding:8px 14px;border:none;border-radius:9px;background:var(--vteal);color:#fff;font-size:.79rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;font-family:inherit}
+.vt-export-btn:hover{background:#0f766e}
+.vt-tag-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.vtag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;cursor:pointer;transition:.15s;user-select:none}
+.vtag.all{background:var(--ink);color:#fff}
+.vtag.app{background:var(--blue2);color:var(--blue)}
+.vtag.bw{background:var(--rose2);color:var(--rose)}
+.vtag.hc{background:var(--emerald2);color:var(--emerald)}
+.vtag.au{background:var(--amber2);color:var(--amber)}
+.vtag.it{background:var(--violet2);color:var(--violet)}
+.vtag.eh{background:#e0f2fe;color:#0369a1}
+.vtag.active{outline:2px solid currentColor;outline-offset:2px}
+.vt-card{background:var(--surface);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);border:1px solid var(--vt-border);overflow:hidden}
+.vt-card-head{padding:11px 16px;border-bottom:1px solid var(--vt-border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.vt-card-head span{font-size:.78rem;font-weight:700;color:var(--ink2)}
+.vt-count-badge{background:var(--vteal3);color:var(--vteal);font-weight:700;font-size:.7rem;padding:2px 9px;border-radius:20px}
+.vt-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.vt-table th{padding:9px 11px;text-align:left;font-weight:700;font-size:.65rem;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3);background:#f8fafc;border-bottom:2px solid var(--vt-border);white-space:nowrap;cursor:pointer}
+.vt-table th:hover{color:var(--vteal)}
+.vt-table th.sorted{color:var(--vteal)}
+.vt-table tbody tr{border-bottom:1px solid #f1f5f9;transition:.12s;cursor:pointer}
+.vt-table tbody tr:hover{background:#f8fafc}
+.vt-table tbody tr:last-child{border:none}
+.vt-table tbody td{padding:8px 11px;vertical-align:middle;color:var(--ink2)}
+.vt-table tbody td strong{color:var(--ink);font-weight:600;font-size:.78rem}
+.vt-phone{font-weight:600;color:var(--vteal);font-size:.73rem}
+.vt-yug{font-family:monospace;font-size:.67rem;color:var(--ink3)}
+.vsec{display:inline-block;padding:2px 7px;border-radius:20px;font-size:.63rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.s-ap{background:var(--blue2);color:var(--blue)}
+.s-bw{background:var(--rose2);color:var(--rose)}
+.s-hc{background:var(--emerald2);color:var(--emerald)}
+.s-au{background:var(--amber2);color:var(--amber)}
+.s-it{background:var(--violet2);color:var(--violet)}
+.s-eh{background:#e0f2fe;color:#0369a1}
+.vudise{font-family:monospace;font-size:.66rem;background:#f1f5f9;color:var(--ink3);padding:1px 5px;border-radius:4px;display:inline-block}
+.vstype{font-size:.63rem;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;white-space:nowrap}
+.vstype-pm{background:#fef9c3;color:#a16207}
+.vstype-sam{background:#ede9fe;color:#6d28d9}
+.vstype-oth{background:#f1f5f9;color:#64748b}
+.vt-sno{color:var(--ink4);font-weight:600;font-size:.7rem}
+.vt-empty{text-align:center;padding:50px 20px;color:var(--ink3)}
+.vt-pgr{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;padding:12px 0 4px}
+.vpbn{padding:5px 10px;border-radius:7px;border:1.5px solid var(--vt-border);background:var(--surface);color:var(--ink2);font-size:.74rem;font-weight:600;cursor:pointer;transition:.15s}
+.vpbn:hover{border-color:var(--vteal);color:var(--vteal)}
+.vpbn.on{background:var(--vteal);border-color:var(--vteal);color:#fff}
+
+  <!-- ── ABSENT TODAY ── -->
+  <div class="tab-panel" id="tab-absent">
+    <div class="card">
+      <div class="card-header"><span class="card-title">⚠️ Absent Today</span><span class="badge badge-red" id="absentCount">Loading…</span></div>
+      <div id="absentList" style="padding:12px 16px"></div>
+    </div>
+  </div>
+
+  <!-- ── ALL SUBMISSIONS ── -->
+  <div class="tab-panel" id="tab-submissions">
+    <div class="input-row">
+      <select class="select-inp" id="statusFilter" onchange="loadAttendance()">
+        <option value="">All Status</option>
+        <option value="approved">✅ Approved</option>
+        <option value="rejected">❌ Rejected</option>
+      </select>
+      <select class="select-inp" id="sectorFilter" onchange="loadAttendance()">
+        <option value="">All Sectors</option>
+        <option>APPAREL</option><option>BEAUTY AND WELLNESS</option>
+        <option>HEALTH CARE</option><option>AUTOMOTIVE</option>
+        <option>IT/ITES</option><option>ELECTRONICS AND HARDWARE</option>
+      </select>
+      <input class="inp inp-search" id="submissionSearch" placeholder="🔍 Search…" oninput="loadAttendance()"/>
+      <button class="btn-sm btn-teal" onclick="exportAttendance()">📤 Export</button>
+    </div>
+    <div class="card">
+      <div class="tw">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>📸</th><th>Name</th><th>Phone</th><th>Sector</th><th>School</th><th>Date</th><th>Time</th><th>Status</th><th>Dist</th></tr></thead>
+          <tbody id="submissionsBody"><tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-dim)">No records found</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRAINERS ── -->
+  <div class="tab-panel" id="tab-trainers">
+    <div id="trainersListView">
+      <div class="card-header" style="background:var(--card);border-radius:12px;margin-bottom:12px;border:1px solid var(--border)">
+        <span class="card-title">👩‍🏫 All 206 Vocational Trainers</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <input class="inp" placeholder="🔍 Search trainer…" id="trainerSearch" oninput="loadTrainers()" style="width:180px"/>
+          <select class="select-inp" id="trainerSectorFilter" onchange="loadTrainers()">
+            <option value="">All Sectors</option>
+            <option>APPAREL</option><option>BEAUTY AND WELLNESS</option>
+            <option>HEALTH CARE</option><option>AUTOMOTIVE</option>
+            <option>IT/ITES</option><option>ELECTRONICS AND HARDWARE</option>
+          </select>
+          <button class="btn-sm btn-green" onclick="showAddTrainer()">➕ Add</button>
+          <button class="btn-sm btn-teal" onclick="exportTrainers()">📤 Export</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tw">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Sector</th><th>School</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="trainersBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim)">Loading trainers…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div id="trainerDetailView" style="display:none">
+      <button class="btn-sm btn-teal" onclick="document.getElementById('trainersListView').style.display='block';document.getElementById('trainerDetailView').style.display='none'" style="margin-bottom:12px">← Back to Trainers List</button>
+      <div id="trainerDetailContent"></div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       📂 VT DETAILS TAB
+       ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-vtdetails">
+    <div id="vtDetailsPanel">
+      <div class="vt-inner">
+        <!-- Stats -->
+        <div class="vt-stats">
+          <div class="vt-scard"><div class="sv" id="vtSTotal">206</div><div class="sl">Total VTs</div></div>
+          <div class="vt-scard"><div class="sv">6</div><div class="sl">Sectors</div></div>
+          <div class="vt-scard"><div class="sv" id="vtSDistricts">—</div><div class="sl">Districts</div></div>
+          <div class="vt-scard"><div class="sv" id="vtSShowing">206</div><div class="sl">Showing</div></div>
+        </div>
+        <!-- Controls -->
+        <div class="vt-controls">
+          <div class="vt-search-wrap">
+            <span class="si">🔍</span>
+            <input id="vtSrch" placeholder="Search name, phone, school, district, YUG ID…" oninput="vtFilter()"/>
+          </div>
+          <select class="vt-sel" id="vtSecF" onchange="vtFilter()">
+            <option value="">All Sectors</option>
+            <option value="APPAREL">APPAREL</option>
+            <option value="BEAUTY AND WELLNESS">BEAUTY &amp; WELLNESS</option>
+            <option value="HEALTH CARE">HEALTH CARE</option>
+            <option value="AUTOMOTIVE">AUTOMOTIVE</option>
+            <option value="IT/ITES">IT/ITES</option>
+            <option value="ELECTRONICS AND HARDWARE">ELECTRONICS &amp; HW</option>
+          </select>
+          <select class="vt-sel" id="vtSchemeF" onchange="vtFilter()">
+            <option value="">All Schemes</option>
+            <option value="PMSHRI">PM SHRI</option>
+            <option value="SAMAGRA">SAMAGRA</option>
+          </select>
+          <select class="vt-sel" id="vtSortF" onchange="vtFilter()">
+            <option value="sno">Sort: S.No</option>
+            <option value="name">Sort: Name A–Z</option>
+            <option value="sector">Sort: Sector</option>
+            <option value="district">Sort: District</option>
+          </select>
+          <button class="vt-export-btn" onclick="vtExportCSV()">📥 Export CSV</button>
+        </div>
+        <!-- Sector tags -->
+        <div class="vt-tag-strip" id="vtTagStrip"></div>
+        <!-- Table card -->
+        <div class="vt-card">
+          <div class="vt-card-head">
+            <span>VT Master Register — Telangana 2025–26</span>
+            <span class="vt-count-badge" id="vtCountBadge">206 records</span>
+          </div>
+          <div class="tw">
+            <table class="vt-table">
+              <thead>
+                <tr>
+                  <th>S.No</th><th>Name &amp; Phone</th><th>Sector</th>
+                  <th>YUG Contract ID</th><th>School</th><th>District</th>
+                  <th>Mandal</th><th>Scheme</th><th>UDISE</th>
+                  <th>Joining</th><th>DOB</th><th>Qualification</th>
+                  <th>Exp (Curr)</th><th>Exp (Total)</th>
+                </tr>
+              </thead>
+              <tbody id="vtBody"></tbody>
+            </table>
+          </div>
+          <div id="vtPgr" class="vt-pgr"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
   <!-- TRAINER PROFILE (subfolder) -->
   <div id="pg-trainer">
     <div class="tpback" onclick="swPg('teachers')">← Back to Trainers List</div>
