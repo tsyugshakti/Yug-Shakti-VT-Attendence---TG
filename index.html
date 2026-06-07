@@ -1412,7 +1412,20 @@ async function syncSecureTime() {
     isTimeSynced = true;
     console.log("Time synchronized securely with server (IST).");
   } catch (e) {
-    console.warn("Using local system clock fallback:", e);
+    console.warn("WorldTimeAPI failed, trying HEAD fallback:", e);
+    try {
+      const res = await fetch(window.location.href, { method: 'HEAD' });
+      const dateStr = res.headers.get('date');
+      if (dateStr) {
+        secureServerTime = new Date(dateStr).getTime();
+        secureLoadTicks = performance.now();
+        isTimeSynced = true;
+        console.log("Time synchronized securely with local server origin header:", dateStr);
+        return;
+      }
+    } catch (e2) {
+      console.warn("HEAD fallback failed:", e2);
+    }
     secureServerTime = Date.now();
     secureLoadTicks = performance.now();
   }
@@ -1876,7 +1889,7 @@ function rDash(){
   const ap=ta.filter(a=>a.status==='approved');
   const pct=tch.length?Math.round(ap.length/tch.length*100):0;
   const s=DB.get('settings',{});
-  $('wBanner').innerHTML=`<div class="wb"><div><h2>👋 Welcome, Administrator!</h2><p>${s.name||'Yug Shakti Vocational Education Telangana'} — ${new Date().toLocaleDateString('en',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p></div><span style="font-size:2.8rem">🏫</span></div>`;
+  $('wBanner').innerHTML=`<div class="wb"><div><h2>👋 Welcome, Administrator!</h2><p>${s.name||'Yug Shakti Vocational Education Telangana'} — ${getSecureDate().toLocaleDateString('en',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p></div><span style="font-size:2.8rem">🏫</span></div>`;
   $('sGrid').innerHTML=`
     <div class="sc cb"><span class="si">👩‍🏫</span><div><div class="sv">${tch.length}</div><div class="sl">Total Trainers</div></div></div>
     <div class="sc cg"><span class="si">✅</span><div><div class="sv">${ap.length}</div><div class="sl">Present Today</div></div></div>
