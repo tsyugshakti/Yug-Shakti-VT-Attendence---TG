@@ -1393,12 +1393,38 @@ setTimeout(()=>{
   setTimeout(()=>{l.style.display='none';document.getElementById('loginPg').style.display='flex';},500);
 },1800);
 
-setInterval(()=>{const c=document.getElementById('clk');if(c)c.textContent=new Date().toLocaleTimeString();},1000);
+setInterval(()=>{const c=document.getElementById('clk');if(c)c.textContent=getSecureDate().toLocaleTimeString();},1000);
 
 let CU=null,CAM=null,PHOTO=null,LOC=null,TP=1,RP=1;
 const PP=15;
 const $=id=>document.getElementById(id);
-const today=()=>new Date().toISOString().split('T')[0];
+let secureServerTime = Date.now();
+let secureLoadTicks = performance.now();
+let isTimeSynced = false;
+
+async function syncSecureTime() {
+  try {
+    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
+    if (!res.ok) throw new Error('Response not ok');
+    const data = await res.json();
+    secureServerTime = new Date(data.datetime).getTime();
+    secureLoadTicks = performance.now();
+    isTimeSynced = true;
+    console.log("Time synchronized securely with server (IST).");
+  } catch (e) {
+    console.warn("Using local system clock fallback:", e);
+    secureServerTime = Date.now();
+    secureLoadTicks = performance.now();
+  }
+}
+syncSecureTime();
+
+function getSecureDate() {
+  const elapsed = performance.now() - secureLoadTicks;
+  return new Date(secureServerTime + elapsed);
+}
+
+const today=()=>getSecureDate().toISOString().split('T')[0];
 const dayN=d=>new Date(d).toLocaleDateString('en',{weekday:'short'});
 
 function gD(a,b,c,d){
@@ -1432,7 +1458,7 @@ function swR(r){
 }
 function logLoginAttempt(ph, name, status, details, photo) {
   const logs = DB.get('loginLogs', []);
-  const now = new Date();
+  const now = getSecureDate();
   logs.push({
     ts: now.toLocaleString(),
     ph: ph,
@@ -1760,7 +1786,7 @@ function openTrainer(ph){
   // Last 30 days attendance
   const last30=[];
   for(let i=0;i<30;i++){
-    const d=new Date();d.setDate(d.getDate()-i);
+    const d=getSecureDate();d.setDate(d.getDate()-i);
     const ds=d.toISOString().split('T')[0];
     const a=att.find(x=>x.date===ds&&x.status==='approved');
     last30.push({date:ds,day:d.toLocaleDateString('en',{weekday:'short'}),present:!!a,rec:a});
@@ -2220,8 +2246,8 @@ function subAtt(){
   if(!LOC||!PHOTO){sAlt('mAlt','⚠️ Please complete all steps first','error');return;}
   const att=DB.get('att',[]);
   if(att.find(a=>a.teacherID===CU.ph&&a.date===today()&&a.status==='approved')){sAlt('mAlt','⚠️ Already marked attendance today!','warning');return;}
-  const now=new Date();
-  const rec={id:'A'+Date.now(),teacherID:CU.ph,teacherName:CU.name,sector:CU.sector,school:CU.school,yug:CU.yug,date:today(),time:now.toTimeString().split(' ')[0],status:'approved',lat:LOC.lat,lng:LOC.lng,distance:LOC.distance,photo:PHOTO,ts:now.toISOString()};
+  const now=getSecureDate();
+  const rec={id:'A'+now.getTime(),teacherID:CU.ph,teacherName:CU.name,sector:CU.sector,school:CU.school,yug:CU.yug,date:today(),time:now.toTimeString().split(' ')[0],status:'approved',lat:LOC.lat,lng:LOC.lng,distance:LOC.distance,photo:PHOTO,ts:now.toISOString()};
   att.push(rec);DB.set('att',att);
   $('mS2').style.display='none';$('mS3').style.display='block';setDt(4);
   $('subInfo').innerHTML=`<div>👤 Name: <strong>${CU.name}</strong></div><div>📅 Date: <strong>${rec.date}</strong></div><div>🕐 Time: <strong>${rec.time}</strong></div><div>📍 Distance: <strong>${rec.distance}m from school</strong></div><div>🏫 School: <strong>${CU.school}</strong></div><div>📋 YUG ID: <strong>${CU.yug||'—'}</strong></div>`;
@@ -2234,7 +2260,7 @@ function resetMark(){
   $('bCam').style.display='flex';$('bCap').style.display='none';$('bRtk').style.display='none';
   $('bSub').disabled=true;$('mAlt').innerHTML='';
   setGeo('chk','📍','Verify Your Location','Click the button below to verify');
-  setDt(1);$('attTime').textContent=new Date().toLocaleString();
+  setDt(1);$('attTime').textContent=getSecureDate().toLocaleString();
   const att=DB.get('att',[]);
   if(att.find(a=>a.teacherID===CU.ph&&a.date===today()&&a.status==='approved')){
     $('mS1').style.display='none';$('mS3').style.display='block';
