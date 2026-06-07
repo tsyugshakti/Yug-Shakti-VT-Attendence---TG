@@ -1402,17 +1402,61 @@ let secureServerTime = Date.now();
 let secureLoadTicks = performance.now();
 let isTimeSynced = false;
 
+function updateSyncedUI() {
+  if (typeof CU !== 'undefined' && CU) {
+    const activePgEl = document.querySelector('.pg.on');
+    if (activePgEl) {
+      const id = activePgEl.id.replace('pg-', '');
+      const fn={dashboard:rDash,records:rRec,teachers:rTch,map:initLiveMap,vtsdata:rVtsData,reports:()=>{},settings:loadSet,mark:resetMark,history:rHist};
+      if(fn[id]) fn[id]();
+    }
+  }
+}
+
 async function syncSecureTime() {
-  try {
-    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
-    if (!res.ok) throw new Error('Response not ok');
-    const data = await res.json();
-    secureServerTime = new Date(data.datetime).getTime();
-    secureLoadTicks = performance.now();
-    isTimeSynced = true;
-    console.log("Time synchronized securely with server (IST).");
-  } catch (e) {
-    console.warn("WorldTimeAPI failed, trying HEAD fallback:", e);
+  const endpoints = [
+    { url: 'http://worldtimeapi.org/api/timezone/Asia/Kolkata', type: 'worldtime' },
+    { url: 'https://worldtimeapi.org/api/timezone/Asia/Kolkata', type: 'worldtime' },
+    { url: 'http://timeapi.io/api/time/current/zone?timeZone=Asia/Kolkata', type: 'timeapi' },
+    { url: 'https://timeapi.io/api/time/current/zone?timeZone=Asia/Kolkata', type: 'timeapi' },
+    { url: 'http://date.jsontest.com/', type: 'jsontest' },
+    { url: 'https://date.jsontest.com/', type: 'jsontest' }
+  ];
+
+  let synced = false;
+  for (const ep of endpoints) {
+    try {
+      console.log("Attempting secure time sync via:", ep.url);
+      const res = await fetch(ep.url);
+      if (!res.ok) throw new Error('Response not ok');
+      const data = await res.json();
+      let ts = null;
+      if (ep.type === 'worldtime' && data.datetime) {
+        ts = new Date(data.datetime).getTime();
+      } else if (ep.type === 'timeapi' && data.dateTime) {
+        ts = new Date(data.dateTime).getTime();
+      } else if (ep.type === 'jsontest' && data.date && data.time) {
+        const [m, d, y] = data.date.split('-');
+        ts = new Date(`${y}-${m}-${d} ${data.time}`).getTime();
+      }
+      
+      if (ts && !isNaN(ts)) {
+        secureServerTime = ts;
+        secureLoadTicks = performance.now();
+        isTimeSynced = true;
+        synced = true;
+        console.log("Time synchronized securely with:", ep.url, new Date(secureServerTime).toString());
+        break;
+      }
+    } catch (err) {
+      console.warn("Failed sync with endpoint:", ep.url, err);
+    }
+  }
+
+  if (synced) {
+    updateSyncedUI();
+  } else {
+    console.warn("All timezone API syncs failed, trying origin HEAD fallback.");
     try {
       const res = await fetch(window.location.href, { method: 'HEAD' });
       const dateStr = res.headers.get('date');
@@ -1421,6 +1465,7 @@ async function syncSecureTime() {
         secureLoadTicks = performance.now();
         isTimeSynced = true;
         console.log("Time synchronized securely with local server origin header:", dateStr);
+        updateSyncedUI();
         return;
       }
     } catch (e2) {
