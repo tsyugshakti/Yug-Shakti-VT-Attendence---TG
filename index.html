@@ -1584,9 +1584,9 @@ async function initApp(){
   let rawPass=DB.get('adminPass',null);
   const isHashed=DB.get('adminPassHashed',false);
   if(!isHashed){
-    const plain=rawPass||'YugShakti77';
+    const plain=rawPass||'YugShakti@0707';
     // ignore old default admin123
-    const usePass=(plain==='admin123')?'YugShakti77':plain;
+    const usePass=(plain==='admin123')?'YugShakti@0707':plain;
     const hashed=await sha256(usePass);
     DB.set('adminPassHash',hashed);
     DB.set('adminPassHashed',true);
@@ -1938,10 +1938,10 @@ async function forgotPass(role) {
   if(role === 'admin') {
     const key = prompt("⚠️ ADMIN RECOVERY ⚠️\n\nEnter the Master Recovery Key to reset the Admin password:");
     if(key === 'YugShaktiReset2026') {
-      const defaultHash = await sha256('YugShakti77');
+      const defaultHash = await sha256('YugShakti@0707');
       DB.set('adminPassHash', defaultHash);
       LOCKOUT.reset();
-      alert("✅ SUCCESS!\n\nYour Admin password has been reset to the default: YugShakti77\n\nPlease login and change it from the Settings menu immediately.");
+      alert("✅ SUCCESS!\n\nYour Admin password has been reset to the default: YugShakti@0707\n\nPlease login and change it from the Settings menu immediately.");
     } else if (key !== null) {
       alert("❌ Invalid Master Recovery Key. Password not reset.");
     }
