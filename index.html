@@ -1080,6 +1080,72 @@ const DB={
   set:(k,v)=>localStorage.setItem('yugg_'+k,JSON.stringify(v))
 };
 
+/* ═══════════════════════════════════════════
+   🔒 SECURITY LAYER — SHA-256 + Session + Lockout
+═══════════════════════════════════════════ */
+
+// SHA-256 hash using browser Web Crypto API (no library needed)
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Session management — stored in sessionStorage (auto-clears on tab close)
+const SESSION={
+  TOKEN_KEY:'yugg_sess_token',
+  USER_KEY:'yugg_sess_user',
+  EXPIRY_KEY:'yugg_sess_expiry',
+  DURATION: 8*60*60*1000, // 8 hours
+  create(user){
+    const token=crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);
+    sessionStorage.setItem(this.TOKEN_KEY,token);
+    sessionStorage.setItem(this.USER_KEY,JSON.stringify(user));
+    sessionStorage.setItem(this.EXPIRY_KEY,Date.now()+this.DURATION);
+    return token;
+  },
+  validate(){
+    const token=sessionStorage.getItem(this.TOKEN_KEY);
+    const expiry=parseInt(sessionStorage.getItem(this.EXPIRY_KEY)||'0');
+    if(!token||Date.now()>expiry)return null;
+    try{return JSON.parse(sessionStorage.getItem(this.USER_KEY));}catch{return null;}
+  },
+  destroy(){
+    sessionStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.removeItem(this.USER_KEY);
+    sessionStorage.removeItem(this.EXPIRY_KEY);
+  }
+};
+
+// Brute-force lockout — max 5 attempts, 15-minute ban
+const LOCKOUT={
+  KEY:'yugg_lockout',
+  MAX:5,
+  BAN_MS:15*60*1000,
+  get(){
+    try{return JSON.parse(localStorage.getItem(this.KEY))||{count:0,until:0};}catch{return{count:0,until:0};}
+  },
+  record(){
+    const d=this.get();
+    d.count=(d.count||0)+1;
+    if(d.count>=this.MAX) d.until=Date.now()+this.BAN_MS;
+    localStorage.setItem(this.KEY,JSON.stringify(d));
+    return d;
+  },
+  reset(){
+    localStorage.setItem(this.KEY,JSON.stringify({count:0,until:0}));
+  },
+  isLocked(){
+    const d=this.get();
+    if(d.until&&Date.now()<d.until) return Math.ceil((d.until-Date.now())/60000);
+    if(d.until&&Date.now()>=d.until) this.reset();
+    return false;
+  },
+  remaining(){
+    const d=this.get();
+    return Math.max(0,this.MAX-d.count);
+  }
+};
+
 
 const VTS_FULL=[
 {sno:1,name:"RAPELLI RAJITHA",phone:"9985649547",aadhar:"680208758289",pan:"COCPR6451N",sector:"APPAREL",email:"dpetcrp1@gmail.com",yug:"YUG/HR/25-26/TG/ARL-19",joining:"04/10/2025",dob:"10/05/1991",qual:"MA,D.El.Ed.,TCC (Tailoring& Embroidery)",expCurr:"3 year",expTotal:"3 year",school:"GGHS SIDDIPET",district:"SIDDIPET",mandal:"SIDDIPET URBAN",block:"SIDDIPET URBAN",udise:"36180900954",schoolType:"ZPHS",scheme:"PM SHRI",hm:"N.MANOHAR",hmPhone:"9492004334",hmEmail:"hmgghssdpt@gmail.com"},
@@ -1499,22 +1565,52 @@ const SEED=[
 {ph:"8985920047",name:"MUKKERA SINDHUJA",sector:"BEAUTY AND WELLNESS",school:"PM SHRI ZPHS GUMADIDHALA",yug:"YUG/HR/25-26/TG/BW-134",lat:17.67685,lng:78.363127,pass:"pass123"}
 ];
 
-function initApp(){
+async function initApp(){
   const existing=DB.get('att',[]);
-  let existingPass=DB.get('adminPass','YugShakti77');
-  if(existingPass==='admin123'){
-    existingPass='YugShakti77';
+
+  // Migrate plain-text admin password to SHA-256 hash
+  let rawPass=DB.get('adminPass',null);
+  const isHashed=DB.get('adminPassHashed',false);
+  if(!isHashed){
+    const plain=rawPass||'YugShakti77';
+    // ignore old default admin123
+    const usePass=(plain==='admin123')?'YugShakti77':plain;
+    const hashed=await sha256(usePass);
+    DB.set('adminPassHash',hashed);
+    DB.set('adminPassHashed',true);
+    // keep raw only briefly for migration, then clear
+    localStorage.removeItem('yugg_adminPass');
   }
-  DB.set('adminPass',existingPass);
-  
+
+  // Migrate teacher plain-text passwords to hashed
+  const teachersHashed=DB.get('teachersHashed',false);
+  if(!teachersHashed){
+    const teachers=DB.get('teachers',SEED);
+    const migrated=await Promise.all(teachers.map(async t=>{
+      const ph=await sha256(t.pass||'pass123');
+      return {...t,passHash:ph,pass:undefined};
+    }));
+    DB.set('teachers',migrated);
+    DB.set('teachersHashed',true);
+  }
+
   const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'06:00',close:'10:30'});
-  if(!s.name || s.name==='YUG Shakti Vocational Education  - Telangana' || s.name==='YUG Shakti Dept'){
+  if(!s.name||s.name==='YUG Shakti Vocational Education  - Telangana'||s.name==='YUG Shakti Dept'){
     s.name='Yug Shakti Vocational Education Telangana';
   }
   DB.set('settings',s);
-
-  DB.set('teachers',SEED);
   DB.set('att',existing);
+
+  // Resume session if valid
+  const sess=SESSION.validate();
+  if(sess){
+    CU=sess;
+    setTimeout(()=>{
+      const l=document.getElementById('loader');
+      l.style.transition='opacity .5s';l.style.opacity='0';
+      setTimeout(()=>{l.style.display='none';boot();},500);
+    },1000);
+  }
 }
 initApp();
 
@@ -1749,23 +1845,35 @@ function handleTeacherLogin() {
       return;
     }
     
+    const locked=LOCKOUT.isLocked();
+    if(locked){sAlt('lgAlt',`🔒 Too many failed attempts. Try again in ${locked} minute${locked>1?'s':''}.`,'error');return;}
+
     const t = DB.get('teachers', []).find(x => x.ph === ph);
-    if (t) {
-      if (t.pass === pass) {
-        logLoginAttempt(ph, t.name, 'Success', `Logged in. Distance: ${LOGIN_LOC.distance}m from school`, LOGIN_PHOTO);
-        CU = { ...t, role: 'teacher' };
-        resetLoginCheckForm();
-        boot();
+    sha256(pass).then(inputHash=>{
+      if (t) {
+        const storedHash=t.passHash||(t.pass?undefined:null);
+        // compare hash; fallback plain if not yet migrated
+        const match=storedHash?inputHash===storedHash:t.pass===pass;
+        if (match) {
+          LOCKOUT.reset();
+          logLoginAttempt(ph, t.name, 'Success', `Logged in. Distance: ${LOGIN_LOC.distance}m from school`, LOGIN_PHOTO);
+          CU = { ...t, role: 'teacher' };
+          SESSION.create(CU);
+          resetLoginCheckForm();
+          boot();
+        } else {
+          const d=LOCKOUT.record();const rem=LOCKOUT.remaining();
+          logLoginAttempt(ph, t.name, 'Failed', `Incorrect password. Location: ${LOGIN_LOC.distance}m from school`, LOGIN_PHOTO);
+          sAlt('lgAlt', rem<=0?'🔒 Account locked 15 min.':'❌ Wrong Phone Number or Password. '+rem+' attempt'+(rem>1?'s':'')+' left.', 'error');
+          resetLoginCheckForm();
+        }
       } else {
-        logLoginAttempt(ph, t.name, 'Failed', `Incorrect password. Location: ${LOGIN_LOC.distance}m from school`, LOGIN_PHOTO);
+        LOCKOUT.record();
+        logLoginAttempt(ph, 'Non-existent Trainer', 'Failed', `Phone not found in DB. Location: ${LOGIN_LOC.distance}m`, LOGIN_PHOTO);
         sAlt('lgAlt', '❌ Wrong Phone Number or Password.', 'error');
         resetLoginCheckForm();
       }
-    } else {
-      logLoginAttempt(ph, 'Non-existent Trainer', 'Failed', `Phone not found in DB. Location: ${LOGIN_LOC.distance}m`, LOGIN_PHOTO);
-      sAlt('lgAlt', '❌ Wrong Phone Number or Password.', 'error');
-      resetLoginCheckForm();
-    }
+    });
   }
 }
 
@@ -1787,14 +1895,36 @@ function resetLoginCheckForm() {
   }
 }
 
-function doLogin(r){
+async function doLogin(r){
   if(r==='admin'){
-    if($('aU').value==='admin'&&$('aP').value===DB.get('adminPass')){
-      CU={name:'Administrator',role:'admin'};boot();
-    }else sAlt('lgAlt','❌ Invalid credentials. Please try again.','error');
+    // Check lockout
+    const locked=LOCKOUT.isLocked();
+    if(locked){sAlt('lgAlt',`🔒 Too many failed attempts. Try again in ${locked} minute${locked>1?'s':''}.`,'error');return;}
+
+    const u=$('aU').value.trim();
+    const p=$('aP').value;
+    if(!u||!p){sAlt('lgAlt','⚠️ Please enter username and password.','error');return;}
+
+    const inputHash=await sha256(p);
+    const storedHash=DB.get('adminPassHash',null);
+
+    if(u==='admin'&&inputHash===storedHash){
+      LOCKOUT.reset();
+      CU={name:'Administrator',role:'admin'};
+      SESSION.create(CU);
+      boot();
+    } else {
+      const d=LOCKOUT.record();
+      const rem=LOCKOUT.remaining();
+      if(rem<=0){
+        sAlt('lgAlt','🔒 Account locked for 15 minutes due to too many failed attempts.','error');
+      } else {
+        sAlt('lgAlt',`❌ Invalid credentials. ${rem} attempt${rem>1?'s':''} remaining.`,'error');
+      }
+    }
   }
 }
-function doLogout(){stopCam();resetLoginCheckForm();CU=null;PHOTO=null;LOC=null;$('app').style.display='none';$('loginPg').style.display='flex';}
+function doLogout(){stopCam();resetLoginCheckForm();SESSION.destroy();CU=null;PHOTO=null;LOC=null;$('app').style.display='none';$('loginPg').style.display='flex';}
 function resetAll(){
   if(confirm('Reset ALL teachers list to original 206 trainers?')){
     DB.set('teachers',SEED);alert('✅ All 206 trainers reloaded!');rTch();rDash();
@@ -2381,15 +2511,20 @@ function getMyLoc(){
   sAlt('sAlt','📍 Getting your GPS location...','info');
   navigator.geolocation.getCurrentPosition(p=>{$('sLa').value=p.coords.latitude.toFixed(7);$('sLo').value=p.coords.longitude.toFixed(7);sAlt('sAlt','✅ Location captured! Click Save Settings.','success');},e=>sAlt('sAlt','❌ '+e.message,'error'));
 }
-function chgPass(){
+async function chgPass(){
   const c=$('cp0').value.trim(),p1=$('np1').value.trim(),p2=$('np2').value.trim();
   if(!c)return sAlt('sAlt','⚠️ Enter current password','error');
-  if(c!==DB.get('adminPass'))return sAlt('sAlt','❌ Current password is incorrect','error');
+  const cHash=await sha256(c);
+  if(cHash!==DB.get('adminPassHash'))return sAlt('sAlt','❌ Current password is incorrect','error');
   if(!p1)return sAlt('sAlt','⚠️ Enter new password','error');
+  if(p1.length<6)return sAlt('sAlt','⚠️ New password must be at least 6 characters','error');
   if(p1!==p2)return sAlt('sAlt','❌ New passwords do not match','error');
-  DB.set('adminPass',p1);sAlt('sAlt','✅ Password changed successfully!','success');
+  const newHash=await sha256(p1);
+  DB.set('adminPassHash',newHash);
+  sAlt('sAlt','✅ Password changed & secured with encryption!','success');
   $('cp0').value='';$('np1').value='';$('np2').value='';
 }
+
 function chkLoc(){
   const t=CU;
   if(!t.lat||!t.lng){setGeo('no','❌','No School Coordinates','Contact admin to set your school GPS.');sAlt('mAlt','❌ School GPS not set. Contact admin.','error');return;}
