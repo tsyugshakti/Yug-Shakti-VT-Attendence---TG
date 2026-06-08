@@ -505,10 +505,12 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div class="fg"><label>Username</label><input class="fc" id="aU" placeholder="Enter username"/></div>
       <div class="fg"><label>Password</label><input class="fc" type="password" id="aP" placeholder="Enter password"/></div>
       <button class="btn bp bfull" onclick="doLogin('admin')">🔐 Admin Login</button>
+      <div style="text-align:center;margin-top:12px"><a href="#" onclick="forgotPass('admin')" style="font-size:.82rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a></div>
     </div>
     <div id="tForm" style="display:none">
       <div class="fg"><label>Phone Number (Login ID)</label><input class="fc" id="tU" placeholder="e.g. 9985649547"/></div>
       <div class="fg"><label>Password</label><input class="fc" type="password" id="tP" placeholder="Enter your password"/></div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:12px"><a href="#" onclick="forgotPass('teacher')" style="font-size:.78rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a></div>
       
       <!-- Login verification area -->
       <div id="lgVerifyArea" style="display:none;margin-top:12px;border-top:1.5px dashed var(--bd);padding-top:12px">
@@ -1931,6 +1933,23 @@ async function doLogin(r){
     }
   }
 }
+
+async function forgotPass(role) {
+  if(role === 'admin') {
+    const key = prompt("⚠️ ADMIN RECOVERY ⚠️\n\nEnter the Master Recovery Key to reset the Admin password:");
+    if(key === 'YugShaktiReset2026') {
+      const defaultHash = await sha256('YugShakti77');
+      DB.set('adminPassHash', defaultHash);
+      LOCKOUT.reset();
+      alert("✅ SUCCESS!\n\nYour Admin password has been reset to the default: YugShakti77\n\nPlease login and change it from the Settings menu immediately.");
+    } else if (key !== null) {
+      alert("❌ Invalid Master Recovery Key. Password not reset.");
+    }
+  } else if (role === 'teacher') {
+    alert("👩‍🏫 TEACHER RECOVERY\n\nPlease contact your Administrator. The Admin can instantly reset your password from the 'Manage Trainers' tab inside their Dashboard.");
+  }
+}
+
 function doLogout(){stopCam();resetLoginCheckForm();SESSION.destroy();CU=null;PHOTO=null;LOC=null;$('app').style.display='none';$('loginPg').style.display='flex';}
 function resetAll(){
   if(confirm('Reset ALL teachers list to original 206 trainers?')){
