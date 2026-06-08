@@ -1642,12 +1642,9 @@ function updateSyncedUI() {
 
 async function syncSecureTime() {
   const endpoints = [
-    { url: 'http://worldtimeapi.org/api/timezone/Asia/Kolkata', type: 'worldtime' },
     { url: 'https://worldtimeapi.org/api/timezone/Asia/Kolkata', type: 'worldtime' },
-    { url: 'http://timeapi.io/api/time/current/zone?timeZone=Asia/Kolkata', type: 'timeapi' },
     { url: 'https://timeapi.io/api/time/current/zone?timeZone=Asia/Kolkata', type: 'timeapi' },
-    { url: 'http://date.jsontest.com/', type: 'jsontest' },
-    { url: 'https://date.jsontest.com/', type: 'jsontest' }
+    { url: 'https://now.httpbin.org/', type: 'httpbin' }
   ];
 
   let synced = false;
