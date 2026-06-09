@@ -31,13 +31,13 @@
   0%{top:8%}50%{top:88%}100%{top:8%}
 }
 .scan-corner{
-  position:absolute;width:26px;height:26px;
+  position:absolute;width:30px;height:30px;
   border-color:#00e676;border-style:solid;border-width:0;z-index:9;
 }
-.scan-corner.tl{top:8px;left:8px;border-top-width:3px;border-left-width:3px;border-radius:5px 0 0 0;}
-.scan-corner.tr{top:8px;right:8px;border-top-width:3px;border-right-width:3px;border-radius:0 5px 0 0;}
-.scan-corner.bl{bottom:8px;left:8px;border-bottom-width:3px;border-left-width:3px;border-radius:0 0 0 5px;}
-.scan-corner.br{bottom:8px;right:8px;border-bottom-width:3px;border-right-width:3px;border-radius:0 0 5px 0;}
+.scan-corner.tl{top:0;left:0;border-top-width:4px;border-left-width:4px;border-radius:12px 0 0 0;}
+.scan-corner.tr{top:0;right:0;border-top-width:4px;border-right-width:4px;border-radius:0 12px 0 0;}
+.scan-corner.bl{bottom:0;left:0;border-bottom-width:4px;border-left-width:4px;border-radius:0 0 0 12px;}
+.scan-corner.br{bottom:0;right:0;border-bottom-width:4px;border-right-width:4px;border-radius:0 0 12px 0;}
 .scan-label{
   position:absolute;bottom:12px;left:0;right:0;
   text-align:center;font-size:.66rem;font-weight:900;
@@ -557,34 +557,16 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div style="background:linear-gradient(135deg,#e8f5e9,#e3f2fd);border-radius:12px;padding:10px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid #c8e6c9">
         <span style="font-size:1.4rem">🛡️</span>
         <div>
-          <div style="font-size:.78rem;font-weight:800;color:#1b5e20">3-LAYER SECURITY ACTIVE</div>
-          <div style="font-size:.7rem;color:#2e7d32;margin-top:1px">📍 GPS Location &nbsp;•&nbsp; 📸 Selfie &nbsp;•&nbsp; 🤖 AI Face ID</div>
+          <div style="font-size:.78rem;font-weight:800;color:#1b5e20">SECURE GEOATTEND PORTAL</div>
+          <div style="font-size:.7rem;color:#2e7d32;margin-top:1px">📍 GPS Geofencing &nbsp;•&nbsp; 🤖 AI Face ID for Attendance</div>
         </div>
       </div>
       <div class="fg"><label>📱 Phone Number (Login ID)</label><input class="fc" id="tU" placeholder="e.g. 9985649547" inputmode="numeric"/></div>
       <div class="fg"><label>🔑 Password</label><input class="fc" type="password" id="tP" placeholder="Enter your password"/></div>
       <div style="text-align:right;margin-top:-8px;margin-bottom:14px"><a href="#" onclick="forgotPass('teacher')" style="font-size:.78rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a></div>
       
-      <!-- Login verification area -->
-      <div id="lgVerifyArea" style="display:none;margin-top:12px;border-top:1.5px dashed var(--bd);padding-top:12px">
-        <p style="font-size:.75rem;font-weight:700;color:var(--t2);margin-bottom:8px;text-align:center">📸 SECURITY CHECK: LOCATION &amp; PHOTO REQUIRED</p>
-        <div class="ls ls-c" id="lgLStat" style="margin:5px 0 10px;padding:8px 10px;font-size:.78rem">
-          <span style="font-size:1.1rem">⏳</span>
-          <div id="lgLTxt">GPS location required</div>
-        </div>
-        <div id="lgCamArea" style="display:none;flex-direction:column;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="position:relative;width:100%;max-width:200px">
-            <video id="lgFeed" autoplay playsinline style="width:100%;border-radius:14px;border:3px solid var(--p)"></video>
-            <div style="position:absolute;top:6px;right:6px;background:rgba(26,115,232,.85);color:#fff;font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:20px">🔴 LIVE</div>
-          </div>
-          <canvas id="lgCanvas" style="display:none"></canvas>
-          <img id="lgPhoto" style="width:100%;max-width:200px;border-radius:14px;border:3px solid var(--s);display:none" alt="Selfie"/>
-          <button class="btn bp" id="btnLgCap" onclick="capLoginPhoto()" style="padding:8px 18px;font-size:.82rem">📸 Take Login Selfie</button>
-        </div>
-      </div>
-      
       <button class="btn bs bfull" id="btnLgAction" onclick="handleTeacherLogin()" style="padding:13px;font-size:1rem;letter-spacing:.3px">🔐 Trainer Login</button>
-      <p style="text-align:center;margin-top:10px;font-size:.76rem;color:var(--t2)">🔒 Secured with AI Face Recognition</p>
+      <p style="text-align:center;margin-top:10px;font-size:.76rem;color:var(--t2)">🔒 Secure Portal Login</p>
     </div>
     <div class="lcopy">©Copyright Yug Shakti • @iamjeevapilli • All Rights Reserved</div>
   </div>
@@ -1876,63 +1858,6 @@ function clearLoginLogs(){
   }
 }
 
-let LOGIN_LOC = null;
-let LOGIN_PHOTO = null;
-let LOGIN_CAM = null;
-
-function getLoginGPS() {
-  const ph = $('tU').value.trim();
-  const t = DB.get('teachers', []).find(x => x.ph === ph);
-  const targetLat = t ? t.lat : 17.3850;
-  const targetLng = t ? t.lng : 78.4867;
-  
-  $('lgLTxt').textContent = "Detecting location...";
-  navigator.geolocation.getCurrentPosition(pos => {
-    const d = gD(pos.coords.latitude, pos.coords.longitude, targetLat, targetLng);
-    LOGIN_LOC = { lat: pos.coords.latitude, lng: pos.coords.longitude, distance: Math.round(d) };
-    $('lgLStat').className = 'ls ls-o';
-    $('lgLTxt').innerHTML = `Location captured! (${Math.round(d)}m from school)`;
-    startLoginCam();
-  }, err => {
-    $('lgLStat').className = 'ls ls-n';
-    $('lgLTxt').textContent = `GPS error: ` + err.message;
-  }, {enableHighAccuracy:true, timeout:10000});
-}
-
-async function startLoginCam() {
-  $('lgCamArea').style.display = 'flex';
-  try {
-    LOGIN_CAM = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'user'}, audio: false});
-    $('lgFeed').srcObject = LOGIN_CAM;
-    $('lgFeed').style.display = 'block';
-    $('lgPhoto').style.display = 'none';
-    $('btnLgCap').style.display = 'inline-flex';
-  } catch (e) {
-    alert('Camera error: ' + e.message);
-  }
-}
-
-function capLoginPhoto() {
-  const v = $('lgFeed');
-  const c = $('lgCanvas');
-  c.width = v.videoWidth || 320;
-  c.height = v.videoHeight || 240;
-  c.getContext('2d').drawImage(v, 0, 0);
-  LOGIN_PHOTO = c.toDataURL('image/jpeg', 0.65);
-  $('lgPhoto').src = LOGIN_PHOTO;
-  $('lgPhoto').style.display = 'block';
-  v.style.display = 'none';
-  $('btnLgCap').style.display = 'none';
-  stopLoginCam();
-}
-
-function stopLoginCam() {
-  if (LOGIN_CAM) {
-    LOGIN_CAM.getTracks().forEach(t => t.stop());
-    LOGIN_CAM = null;
-  }
-}
-
 function handleTeacherLogin() {
   const ph = $('tU').value.trim();
   const pass = $('tP').value;
@@ -1941,70 +1866,41 @@ function handleTeacherLogin() {
     return;
   }
   
-  const verifyArea = $('lgVerifyArea');
-  const btn = $('btnLgAction');
-  
-  if (verifyArea.style.display === 'none') {
-    verifyArea.style.display = 'block';
-    btn.textContent = '🔐 Verify & Login';
-    btn.className = 'btn bp bfull';
-    getLoginGPS();
-  } else {
-    if (!LOGIN_LOC) {
-      sAlt('lgAlt', '⚠️ Please capture your GPS location first', 'error');
-      return;
-    }
-    if (!LOGIN_PHOTO) {
-      sAlt('lgAlt', '⚠️ Please take your login selfie first', 'error');
-      return;
-    }
-    
-    const locked=LOCKOUT.isLocked();
-    if(locked){sAlt('lgAlt',`🔒 Too many failed attempts. Try again in ${locked} minute${locked>1?'s':''}.`,'error');return;}
+  const locked=LOCKOUT.isLocked();
+  if(locked){sAlt('lgAlt',`🔒 Too many failed attempts. Try again in ${locked} minute${locked>1?'s':''}.`,'error');return;}
 
-    const t = DB.get('teachers', []).find(x => x.ph === ph);
-    sha256(pass).then(inputHash=>{
-      if (t) {
-        const storedHash=t.passHash||(t.pass?undefined:null);
-        // compare hash; fallback plain if not yet migrated
-        const match=storedHash?inputHash===storedHash:t.pass===pass;
-        if (match) {
-          LOCKOUT.reset();
-          logLoginAttempt(ph, t.name, 'Success', `Logged in. Distance: ${LOGIN_LOC.distance}m from school`, LOGIN_PHOTO);
-          CU = { ...t, role: 'teacher' };
-          SESSION.create(CU);
-          resetLoginCheckForm();
-          boot();
-        } else {
-          const d=LOCKOUT.record();const rem=LOCKOUT.remaining();
-          logLoginAttempt(ph, t.name, 'Failed', `Incorrect password. Location: ${LOGIN_LOC.distance}m from school`, LOGIN_PHOTO);
-          sAlt('lgAlt', rem<=0?'🔒 Account locked 15 min.':'❌ Wrong Phone Number or Password. '+rem+' attempt'+(rem>1?'s':'')+' left.', 'error');
-          resetLoginCheckForm();
-        }
+  const t = DB.get('teachers', []).find(x => x.ph === ph);
+  sha256(pass).then(inputHash=>{
+    if (t) {
+      const storedHash=t.passHash||(t.pass?undefined:null);
+      // compare hash; fallback plain if not yet migrated
+      const match=storedHash?inputHash===storedHash:t.pass===pass;
+      if (match) {
+        LOCKOUT.reset();
+        logLoginAttempt(ph, t.name, 'Success', `Logged in.`, null);
+        CU = { ...t, role: 'teacher' };
+        SESSION.create(CU);
+        resetLoginCheckForm();
+        boot();
       } else {
-        LOCKOUT.record();
-        logLoginAttempt(ph, 'Non-existent Trainer', 'Failed', `Phone not found in DB. Location: ${LOGIN_LOC.distance}m`, LOGIN_PHOTO);
-        sAlt('lgAlt', '❌ Wrong Phone Number or Password.', 'error');
+        const d=LOCKOUT.record();const rem=LOCKOUT.remaining();
+        logLoginAttempt(ph, t.name, 'Failed', `Incorrect password.`, null);
+        sAlt('lgAlt', rem<=0?'🔒 Account locked 15 min.':'❌ Wrong Phone Number or Password. '+rem+' attempt'+(rem>1?'s':'')+' left.', 'error');
         resetLoginCheckForm();
       }
-    });
-  }
+    } else {
+      LOCKOUT.record();
+      logLoginAttempt(ph, 'Non-existent Trainer', 'Failed', `Phone not found in DB.`, null);
+      sAlt('lgAlt', '❌ Wrong Phone Number or Password.', 'error');
+      resetLoginCheckForm();
+    }
+  });
 }
 
 function resetLoginCheckForm() {
-  stopLoginCam();
-  LOGIN_LOC = null;
-  LOGIN_PHOTO = null;
-  $('lgVerifyArea').style.display = 'none';
-  $('lgCamArea').style.display = 'none';
-  $('lgPhoto').style.display = 'none';
-  $('lgFeed').style.display = 'none';
-  $('lgLStat').className = 'ls ls-c';
-  $('lgLTxt').textContent = 'GPS location required';
-  
   const btn = $('btnLgAction');
   if (btn) {
-    btn.textContent = '🔐 Teacher Login';
+    btn.textContent = '🔐 Trainer Login';
     btn.className = 'btn bs bfull';
   }
 }
@@ -2756,13 +2652,6 @@ function frsStartOverlay(){
     const det=await faceapi.detectAllFaces(v,new faceapi.SsdMobilenetv1Options({minConfidence:0.5}));
     const ctx=fc.getContext('2d');
     ctx.clearRect(0,0,fc.width,fc.height);
-    det.forEach(d=>{
-      const {x,y,width,height}=d.box;
-      ctx.strokeStyle='#00e676';ctx.lineWidth=2;
-      ctx.strokeRect(x,y,width,height);
-      ctx.fillStyle='rgba(0,230,118,0.1)';
-      ctx.fillRect(x,y,width,height);
-    });
     // Update scanner label dynamically
     const lbl=document.querySelector('.scan-label');
     const st=$('frsStatus');
