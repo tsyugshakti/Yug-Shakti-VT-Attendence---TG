@@ -17,6 +17,56 @@
 <!-- Face Recognition AI Library -->
 <script src="js/face-api.min.js"></script>
 <style>
+/* ═══════════════════════════════════════
+   FACE SCANNER OVERLAY ANIMATIONS
+═══════════════════════════════════════ */
+.scan-line{
+  position:absolute;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,#00e676,#00bcd4,#00e676,transparent);
+  box-shadow:0 0 14px #00e676,0 0 28px #00bcd4;
+  animation:scanMove 2s linear infinite;
+  z-index:9;
+}
+@keyframes scanMove{
+  0%{top:8%}50%{top:88%}100%{top:8%}
+}
+.scan-corner{
+  position:absolute;width:26px;height:26px;
+  border-color:#00e676;border-style:solid;border-width:0;z-index:9;
+}
+.scan-corner.tl{top:8px;left:8px;border-top-width:3px;border-left-width:3px;border-radius:5px 0 0 0;}
+.scan-corner.tr{top:8px;right:8px;border-top-width:3px;border-right-width:3px;border-radius:0 5px 0 0;}
+.scan-corner.bl{bottom:8px;left:8px;border-bottom-width:3px;border-left-width:3px;border-radius:0 0 0 5px;}
+.scan-corner.br{bottom:8px;right:8px;border-bottom-width:3px;border-right-width:3px;border-radius:0 0 5px 0;}
+.scan-oval{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);
+  width:120px;height:155px;
+  border:2px dashed rgba(0,230,118,.7);border-radius:50%;
+  animation:ovalPulse 1.6s ease-in-out infinite;z-index:9;
+}
+@keyframes ovalPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.3);border-color:rgba(0,230,118,.6);}
+  50%{box-shadow:0 0 0 10px rgba(0,230,118,.06);border-color:#00e676;}
+}
+.scan-label{
+  position:absolute;bottom:12px;left:0;right:0;
+  text-align:center;font-size:.66rem;font-weight:900;
+  color:#00e676;letter-spacing:2px;
+  text-shadow:0 0 10px #00e676,0 0 20px #00bcd4;
+  animation:lblBlink 1.1s ease-in-out infinite;z-index:9;
+}
+@keyframes lblBlink{0%,100%{opacity:1}50%{opacity:.3}}
+.scan-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,230,118,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,230,118,.05) 1px,transparent 1px);
+  background-size:22px 22px;z-index:7;
+}
+@keyframes scanSuccess{0%{background:rgba(0,230,118,0)}40%{background:rgba(0,230,118,.3)}100%{background:rgba(0,230,118,0)}}
+.scan-verified{animation:scanSuccess .9s ease forwards;}
+@keyframes scanFail{0%{background:rgba(217,48,37,0)}40%{background:rgba(217,48,37,.3)}100%{background:rgba(217,48,37,0)}}
+.scan-fail{animation:scanFail .9s ease forwards;}
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--p:#1a73e8;--s:#0f9d58;--d:#d93025;--o:#f9ab00;--bg:#f0f4f8;--w:#fff;--bd:#dadce0;--t:#202124;--t2:#5f6368}
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
@@ -1008,13 +1058,29 @@ tbody tr:nth-child(8){animation-delay:.32s}
         <div id="frsStatus" style="display:none;padding:11px 15px;border-radius:12px;font-size:.83rem;font-weight:700;margin-bottom:12px;text-align:center;background:#eef2ff;color:#1a73e8;border:1.5px solid #c7d7fc;">🤖 AI Loading...</div>
         <div class="card" style="border-radius:16px;padding:16px">
           <div style="font-size:.78rem;font-weight:800;color:var(--t2);text-align:center;margin-bottom:10px;letter-spacing:.5px">📸 FACE VERIFICATION</div>
-          <div class="camw" style="position:relative;border-radius:14px;overflow:hidden">
-            <video id="vFeed" autoplay playsinline style="border-radius:12px"></video>
+          <div class="camw" style="position:relative;border-radius:14px;overflow:hidden;background:#000">
+            <video id="vFeed" autoplay playsinline style="border-radius:12px;display:block"></video>
             <canvas id="frsCanvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
             <canvas id="pCanvas"></canvas>
             <img id="cPhoto" alt="" style="border-radius:12px"/>
             <!-- Live badge -->
-            <div id="liveBadge" style="position:absolute;top:10px;right:10px;background:rgba(217,48,37,.9);color:#fff;font-size:.62rem;font-weight:900;padding:3px 8px;border-radius:20px;display:none">🔴 LIVE</div>
+            <div id="liveBadge" style="position:absolute;top:10px;right:10px;background:rgba(217,48,37,.9);color:#fff;font-size:.62rem;font-weight:900;padding:3px 8px;border-radius:20px;display:none;z-index:10">🔴 LIVE</div>
+            <!-- ══ FACE SCANNER OVERLAY ══ -->
+            <div id="frsScanner" style="display:none;position:absolute;inset:0;pointer-events:none;z-index:8">
+              <!-- Scan line -->
+              <div class="scan-line"></div>
+              <!-- Corner brackets -->
+              <div class="scan-corner tl"></div>
+              <div class="scan-corner tr"></div>
+              <div class="scan-corner bl"></div>
+              <div class="scan-corner br"></div>
+              <!-- Centre face oval -->
+              <div class="scan-oval"></div>
+              <!-- Scan label -->
+              <div class="scan-label">🤖 SCANNING FACE...</div>
+              <!-- Grid dots -->
+              <div class="scan-grid"></div>
+            </div>
           </div>
           <div class="cbtns" style="margin-top:12px;gap:10px">
             <button class="btn bp" id="bCam" onclick="startCam();$('liveBadge').style.display='block'" style="padding:10px 18px">📷 Open Camera</button>
@@ -2691,6 +2757,9 @@ async function startCam(){
 function frsStartOverlay(){
   const v=$('vFeed'),fc=$('frsCanvas');
   fc.width=v.videoWidth||320;fc.height=v.videoHeight||240;
+  // Show the scanner overlay
+  const sc=$('frsScanner');
+  if(sc){sc.style.display='block';sc.classList.remove('scan-verified','scan-fail');}
   if(FRS_DETECT_LOOP)clearInterval(FRS_DETECT_LOOP);
   FRS_DETECT_LOOP=setInterval(async()=>{
     if(!CAM||!FRS_READY)return;
@@ -2699,22 +2768,31 @@ function frsStartOverlay(){
     ctx.clearRect(0,0,fc.width,fc.height);
     det.forEach(d=>{
       const {x,y,width,height}=d.box;
-      ctx.strokeStyle='#00e676';ctx.lineWidth=3;
+      ctx.strokeStyle='#00e676';ctx.lineWidth=2;
       ctx.strokeRect(x,y,width,height);
-      ctx.fillStyle='rgba(0,230,118,0.15)';
+      ctx.fillStyle='rgba(0,230,118,0.1)';
       ctx.fillRect(x,y,width,height);
     });
+    // Update scanner label dynamically
+    const lbl=document.querySelector('.scan-label');
     const st=$('frsStatus');
-    if(st&&FRS_READY){
-      if(det.length===1){st.textContent='✅ Face detected! Click "Verify & Capture"';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
-      else if(det.length>1){st.textContent='⚠️ Multiple faces detected! Only 1 person allowed';st.style.background='#fff3e0';st.style.color='#e65100';st.style.borderColor='#ffcc02';}
-      else{st.textContent='👤 No face detected — position your face in the camera';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
+    if(det.length===1){
+      if(lbl)lbl.textContent='✅ FACE LOCKED — CLICK CAPTURE';
+      if(st&&FRS_READY){st.textContent='✅ Face detected! Click "Verify & Capture"';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+    } else if(det.length>1){
+      if(lbl)lbl.textContent='⚠️ MULTIPLE FACES — STEP BACK';
+      if(st&&FRS_READY){st.textContent='⚠️ Multiple faces detected! Only 1 person allowed';st.style.background='#fff3e0';st.style.color='#e65100';st.style.borderColor='#ffcc02';}
+    } else {
+      if(lbl)lbl.textContent='🤖 SCANNING FACE...';
+      if(st&&FRS_READY){st.textContent='👤 No face detected — position your face in the camera';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
     }
   },400);
 }
 
 async function capPhoto(){
   if(FRS_DETECT_LOOP){clearInterval(FRS_DETECT_LOOP);FRS_DETECT_LOOP=null;}
+  // Stop scanner animation
+  const sc=$('frsScanner');
   const v=$('vFeed'),c=$('pCanvas');
   c.width=v.videoWidth;c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
@@ -2746,17 +2824,21 @@ async function capPhoto(){
         const dist=faceapi.euclideanDistance(descriptor,storedDesc);
         console.log('FRS distance:',dist);
         if(dist>0.55){
-          // Face does NOT match
+          // Face does NOT match — red flash
+          if(sc){sc.classList.add('scan-fail');const lbl=sc.querySelector('.scan-label');if(lbl)lbl.textContent='🚨 MISMATCH DETECTED!';}
           if(st){st.textContent='🚨 FACE MISMATCH! This is not the registered trainer!';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
           sAlt('mAlt','🚨 FACE MISMATCH! The face in the photo does not match the registered trainer. Attendance BLOCKED.','error');
-          // Log the mismatch attempt
           const att=DB.get('att',[]);
           att.push({id:'FAIL'+Date.now(),teacherID:CU.ph,teacherName:CU.name,date:today(),time:new Date().toTimeString().split(' ')[0],status:'rejected',reason:'Face mismatch (FRS)',photo:c.toDataURL('image/jpeg',.5),ts:new Date().toISOString()});
           DB.set('att',att);
-          $('vFeed').style.display='block';frsStartOverlay();
+          setTimeout(()=>{$('vFeed').style.display='block';frsStartOverlay();},900);
           return;
         } else {
-          if(st){st.textContent='✅ Identity Verified! Face matches. Submitting attendance...';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+          // Green flash on match
+          if(sc){sc.classList.add('scan-verified');const lbl=sc.querySelector('.scan-label');if(lbl)lbl.textContent='✅ IDENTITY VERIFIED!';}
+          if(st){st.textContent='✅ Identity Verified! Face matches. Submitting...';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+          await new Promise(r=>setTimeout(r,700)); // brief flash
+          if(sc)sc.style.display='none'; // hide scanner
         }
       }
     } catch(err){
