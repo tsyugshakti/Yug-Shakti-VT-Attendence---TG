@@ -14,6 +14,8 @@
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://yugshaktivtattendencetg.vercel.app/favicon.jpg" />
+<!-- Face Recognition AI Library -->
+<script src="js/face-api.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--p:#1a73e8;--s:#0f9d58;--d:#d93025;--o:#f9ab00;--bg:#f0f4f8;--w:#fff;--bd:#dadce0;--t:#202124;--t2:#5f6368}
@@ -974,13 +976,17 @@ tbody tr:nth-child(8){animation-delay:.32s}
       </div>
       <div id="mS2" style="display:none">
         <div class="alt a-s">✅ Location verified! Now take your selfie 📸</div>
-        <div class="camw">
+        <!-- FRS Status bar -->
+        <div id="frsStatus" style="display:none;padding:9px 13px;border-radius:9px;font-size:.82rem;font-weight:700;margin-bottom:10px;text-align:center;background:#eef2ff;color:#1a73e8;border:1.5px solid #c7d7fc;">🤖 AI Loading...</div>
+        <div class="camw" style="position:relative">
           <video id="vFeed" autoplay playsinline></video>
+          <!-- FRS face overlay canvas -->
+          <canvas id="frsCanvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
           <canvas id="pCanvas"></canvas>
           <img id="cPhoto" alt=""/>
           <div class="cbtns">
             <button class="btn bp" id="bCam" onclick="startCam()">📷 Open Camera</button>
-            <button class="btn bs" id="bCap" onclick="capPhoto()" style="display:none">📸 Take Selfie</button>
+            <button class="btn bs" id="bCap" onclick="capPhoto()" style="display:none">📸 Verify & Capture</button>
             <button class="btn bo" id="bRtk" onclick="rtkPhoto()" style="display:none">🔄 Retake</button>
           </div>
         </div>
@@ -1050,8 +1056,9 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div class="fg"><label>Sector</label><select class="fc" id="eSec"><option>APPAREL</option><option>BEAUTY AND WELLNESS</option><option>HEALTH CARE</option><option>AUTOMOTIVE</option><option>IT/ITES</option><option>ELECTRONICS AND HARDWARE</option></select></div>
       <div class="fg"><label>New Password (blank=keep)</label><input class="fc" type="password" id="ePas" placeholder="Leave blank to keep"/></div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:7px">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:7px;flex-wrap:wrap">
       <button class="btn bo" onclick="closeModal('editTM')">Cancel</button>
+      <button class="btn bd2" onclick="frsResetFace($('ePh').value)" title="Clear face registration so trainer must re-register face">🔓 Reset Face ID</button>
       <button class="btn bp" onclick="saveEdit()">💾 Save</button>
     </div>
   </div>
@@ -2500,6 +2507,19 @@ function saveEdit(){
   // Refresh trainer profile if currently open
   if($('pg-trainer').classList.contains('on'))openTrainer(ph);
 }
+
+function frsResetFace(ph){
+  if(!ph)return;
+  const all=DB.get('teachers',[]);
+  const idx=all.findIndex(t=>t.ph===ph);
+  if(idx<0)return;
+  const name=all[idx].name||ph;
+  if(!confirm(`🔓 RESET FACE ID\n\nThis will clear the registered face for:\n${name}\n\nThey will be asked to re-register their face on next attendance.\n\nContinue?`))return;
+  delete all[idx].faceDescriptor;
+  DB.set('teachers',all);
+  closeModal('editTM');rTch();
+  alert(`✅ Face ID reset for ${name}. They will re-register on next login.`);
+}
 function delT(ph){if(!confirm('Delete this trainer?'))return;DB.set('teachers',DB.get('teachers',[]).filter(t=>t.ph!==ph));rTch();rDash();}
 function expTch(){const all=DB.get('teachers',[]);dlCSV([['Phone','Name','Sector','School','YUG ID'],...all.map(t=>[t.ph,t.name,t.sector,t.school,t.yug||''])],'trainers.csv');}
 function genRpt(){
@@ -2575,23 +2595,165 @@ function setGeo(type,ico,tit,sub){
   $('lTxt').textContent=tit;$('lDist').textContent=sub;
 }
 function setDt(n){for(let i=1;i<=3;i++){const d=$('d'+i);if(i<n)d.className='sd dn';else if(i===n)d.className='sd on';else d.className='sd';}}
+/* ══════════════════════════════════════════════════════
+   FRS — Facial Recognition System
+   Uses face-api.js (SSD MobileNet + 68-point landmarks + face recognition)
+══════════════════════════════════════════════════════ */
+let FRS_READY=false;
+let FRS_LOADING=false;
+let FRS_DETECT_LOOP=null;
+
+async function frsLoadModels(){
+  if(FRS_READY||FRS_LOADING)return;
+  FRS_LOADING=true;
+  const st=$('frsStatus');
+  if(st){st.style.display='block';st.textContent='🤖 Loading AI Face Recognition Models...';st.style.background='#fff8e1';st.style.color='#f9ab00';st.style.borderColor='#fde68a';}
+  try{
+    const MODEL_URL='./models';
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    FRS_READY=true;
+    if(st){st.textContent='✅ Face AI Ready! Look at camera and click Verify & Capture';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+  }catch(e){
+    console.error('FRS model load error:',e);
+    if(st){st.textContent='⚠️ Face AI unavailable — attendance allowed without face check';st.style.background='#fff3e0';st.style.color='#e65100';st.style.borderColor='#ffcc02';}
+  }
+  FRS_LOADING=false;
+}
+
 async function startCam(){
   try{
-    CAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    const st=$('frsStatus');
+    if(st)st.style.display='block';
+    CAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
     $('vFeed').srcObject=CAM;$('vFeed').style.display='block';
     $('bCam').style.display='none';$('bCap').style.display='flex';
+    // Load FRS models while camera warms up
+    frsLoadModels();
+    // Start live face detection overlay
+    $('vFeed').addEventListener('loadedmetadata',frsStartOverlay,{once:true});
   }catch(e){sAlt('mAlt','❌ Camera Error: '+e.message,'error');}
 }
-function capPhoto(){
-  const v=$('vFeed'),c=$('pCanvas');c.width=v.videoWidth;c.height=v.videoHeight;
+
+function frsStartOverlay(){
+  const v=$('vFeed'),fc=$('frsCanvas');
+  fc.width=v.videoWidth||320;fc.height=v.videoHeight||240;
+  if(FRS_DETECT_LOOP)clearInterval(FRS_DETECT_LOOP);
+  FRS_DETECT_LOOP=setInterval(async()=>{
+    if(!CAM||!FRS_READY)return;
+    const det=await faceapi.detectAllFaces(v,new faceapi.SsdMobilenetv1Options({minConfidence:0.5}));
+    const ctx=fc.getContext('2d');
+    ctx.clearRect(0,0,fc.width,fc.height);
+    det.forEach(d=>{
+      const {x,y,width,height}=d.box;
+      ctx.strokeStyle='#00e676';ctx.lineWidth=3;
+      ctx.strokeRect(x,y,width,height);
+      ctx.fillStyle='rgba(0,230,118,0.15)';
+      ctx.fillRect(x,y,width,height);
+    });
+    const st=$('frsStatus');
+    if(st&&FRS_READY){
+      if(det.length===1){st.textContent='✅ Face detected! Click "Verify & Capture"';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+      else if(det.length>1){st.textContent='⚠️ Multiple faces detected! Only 1 person allowed';st.style.background='#fff3e0';st.style.color='#e65100';st.style.borderColor='#ffcc02';}
+      else{st.textContent='👤 No face detected — position your face in the camera';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
+    }
+  },400);
+}
+
+async function capPhoto(){
+  if(FRS_DETECT_LOOP){clearInterval(FRS_DETECT_LOOP);FRS_DETECT_LOOP=null;}
+  const v=$('vFeed'),c=$('pCanvas');
+  c.width=v.videoWidth;c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
+  const frsC=$('frsCanvas');frsC.getContext('2d').clearRect(0,0,frsC.width,frsC.height);
+
+  // --- FRS Verification ---
+  if(FRS_READY){
+    const st=$('frsStatus');
+    if(st){st.style.display='block';st.textContent='🔍 Verifying your identity with AI...';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
+    try{
+      const detection=await faceapi.detectSingleFace(c).withFaceLandmarks().withFaceDescriptor();
+      if(!detection){
+        if(st){st.textContent='❌ No face detected in photo! Please retake.';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
+        sAlt('mAlt','❌ No face detected in the photo. Please retake.','error');
+        // Restart camera
+        $('vFeed').style.display='block';frsStartOverlay();
+        return;
+      }
+      const descriptor=detection.descriptor;
+      const teacher=DB.get('teachers',[]).find(t=>t.ph===CU.ph);
+      const storedDesc=teacher&&teacher.faceDescriptor?new Float32Array(teacher.faceDescriptor):null;
+
+      if(!storedDesc){
+        // First time — register this face as baseline
+        await frsRegisterFace(descriptor,c);
+        return;
+      } else {
+        // Compare with stored
+        const dist=faceapi.euclideanDistance(descriptor,storedDesc);
+        console.log('FRS distance:',dist);
+        if(dist>0.55){
+          // Face does NOT match
+          if(st){st.textContent='🚨 FACE MISMATCH! This is not the registered trainer!';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
+          sAlt('mAlt','🚨 FACE MISMATCH! The face in the photo does not match the registered trainer. Attendance BLOCKED.','error');
+          // Log the mismatch attempt
+          const att=DB.get('att',[]);
+          att.push({id:'FAIL'+Date.now(),teacherID:CU.ph,teacherName:CU.name,date:today(),time:new Date().toTimeString().split(' ')[0],status:'rejected',reason:'Face mismatch (FRS)',photo:c.toDataURL('image/jpeg',.5),ts:new Date().toISOString()});
+          DB.set('att',att);
+          $('vFeed').style.display='block';frsStartOverlay();
+          return;
+        } else {
+          if(st){st.textContent='✅ Identity Verified! Face matches. Submitting attendance...';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+        }
+      }
+    } catch(err){
+      console.warn('FRS error:',err);
+      const st=$('frsStatus');
+      if(st){st.textContent='⚠️ AI check skipped — proceeding with attendance';st.style.background='#fff3e0';st.style.color='#e65100';}
+    }
+  }
+
+  // All checks passed — finalize photo
   PHOTO=c.toDataURL('image/jpeg',.72);
-  $('cPhoto').src=PHOTO;$('cPhoto').style.display='block';v.style.display='none';
+  $('cPhoto').src=PHOTO;$('cPhoto').style.display='block';
+  v.style.display='none';
   $('bCap').style.display='none';$('bRtk').style.display='flex';
   $('bSub').disabled=false;stopCam();setDt(3);
 }
-function rtkPhoto(){PHOTO=null;$('cPhoto').style.display='none';$('bRtk').style.display='none';$('bSub').disabled=true;setDt(2);startCam();}
-function stopCam(){if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null;}}
+
+async function frsRegisterFace(descriptor,canvas){
+  const confirmed=confirm('👤 FIRST-TIME FACE REGISTRATION\n\nYour face has not been registered yet.\n\nThis photo will be saved as your identity baseline for all future attendance.\n\nAre you sure this is YOUR face? Click OK to register.');
+  if(!confirmed){
+    sAlt('mAlt','⚠️ Face registration cancelled. Please retake photo.','warning');
+    $('vFeed').style.display='block';frsStartOverlay();
+    return;
+  }
+  // Save descriptor to teacher profile
+  const all=DB.get('teachers',[]);
+  const idx=all.findIndex(t=>t.ph===CU.ph);
+  if(idx>=0){all[idx].faceDescriptor=Array.from(descriptor);DB.set('teachers',all);}
+  const st=$('frsStatus');
+  if(st){st.textContent='✅ Face Registered! Identity saved. Submitting attendance...';st.style.background='#e8f5e9';st.style.color='#0f9d58';st.style.borderColor='#a5d6a7';}
+  // Also update CU
+  CU.faceDescriptor=Array.from(descriptor);
+  // Finalize photo
+  PHOTO=canvas.toDataURL('image/jpeg',.72);
+  $('cPhoto').src=PHOTO;$('cPhoto').style.display='block';
+  $('vFeed').style.display='none';
+  $('bCap').style.display='none';$('bRtk').style.display='flex';
+  $('bSub').disabled=false;stopCam();setDt(3);
+}
+
+function rtkPhoto(){
+  PHOTO=null;$('cPhoto').style.display='none';$('bRtk').style.display='none';
+  $('bSub').disabled=true;setDt(2);startCam();
+}
+function stopCam(){
+  if(FRS_DETECT_LOOP){clearInterval(FRS_DETECT_LOOP);FRS_DETECT_LOOP=null;}
+  if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null;}
+  const fc=$('frsCanvas');if(fc)fc.getContext('2d').clearRect(0,0,fc.width,fc.height);
+}
 function subAtt(){
   if(!LOC||!PHOTO){sAlt('mAlt','⚠️ Please complete all steps first','error');return;}
   const att=DB.get('att',[]);
