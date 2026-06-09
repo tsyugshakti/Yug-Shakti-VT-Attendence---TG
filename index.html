@@ -38,16 +38,6 @@
 .scan-corner.tr{top:8px;right:8px;border-top-width:3px;border-right-width:3px;border-radius:0 5px 0 0;}
 .scan-corner.bl{bottom:8px;left:8px;border-bottom-width:3px;border-left-width:3px;border-radius:0 0 0 5px;}
 .scan-corner.br{bottom:8px;right:8px;border-bottom-width:3px;border-right-width:3px;border-radius:0 0 5px 0;}
-.scan-oval{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);
-  width:120px;height:155px;
-  border:2px dashed rgba(0,230,118,.7);border-radius:50%;
-  animation:ovalPulse 1.6s ease-in-out infinite;z-index:9;
-}
-@keyframes ovalPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.3);border-color:rgba(0,230,118,.6);}
-  50%{box-shadow:0 0 0 10px rgba(0,230,118,.06);border-color:#00e676;}
-}
 .scan-label{
   position:absolute;bottom:12px;left:0;right:0;
   text-align:center;font-size:.66rem;font-weight:900;
@@ -1074,8 +1064,6 @@ tbody tr:nth-child(8){animation-delay:.32s}
               <div class="scan-corner tr"></div>
               <div class="scan-corner bl"></div>
               <div class="scan-corner br"></div>
-              <!-- Centre face oval -->
-              <div class="scan-oval"></div>
               <!-- Scan label -->
               <div class="scan-label">🤖 SCANNING FACE...</div>
               <!-- Grid dots -->
@@ -1864,6 +1852,8 @@ function swR(r){
   $('tForm').style.display=r==='teacher'?'block':'none';
   $('lgAlt').innerHTML='';
   resetLoginCheckForm();
+  // Preload FRS models as soon as Teacher tab is clicked
+  if(r==='teacher' && typeof faceapi!=='undefined') frsLoadModels();
 }
 function logLoginAttempt(ph, name, status, details, photo) {
   const logs = DB.get('loginLogs', []);
@@ -2786,7 +2776,7 @@ function frsStartOverlay(){
       if(lbl)lbl.textContent='🤖 SCANNING FACE...';
       if(st&&FRS_READY){st.textContent='👤 No face detected — position your face in the camera';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
     }
-  },400);
+  },200);
 }
 
 async function capPhoto(){
