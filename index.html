@@ -507,34 +507,44 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div class="fg"><label>Username</label><input class="fc" id="aU" placeholder="Enter username"/></div>
       <div class="fg"><label>Password</label><input class="fc" type="password" id="aP" placeholder="Enter password"/></div>
       <button class="btn bp bfull" onclick="doLogin('admin')">🔐 Admin Login</button>
-      <div style="text-align:center;margin-top:12px"><a href="#" onclick="forgotPass('admin')" style="font-size:.82rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a></div>
+      <div style="text-align:center;margin-top:12px;display:flex;justify-content:center;gap:18px">
+        <a href="#" onclick="forgotPass('admin')" style="font-size:.82rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a>
+        <a href="#" onclick="clearLoginCache()" style="font-size:.82rem;color:#d93025;text-decoration:none;font-weight:600">🧹 Clear Cache</a>
+      </div>
     </div>
     <div id="tForm" style="display:none">
-      <div class="fg"><label>Phone Number (Login ID)</label><input class="fc" id="tU" placeholder="e.g. 9985649547"/></div>
-      <div class="fg"><label>Password</label><input class="fc" type="password" id="tP" placeholder="Enter your password"/></div>
-      <div style="text-align:right;margin-top:-8px;margin-bottom:12px"><a href="#" onclick="forgotPass('teacher')" style="font-size:.78rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a></div>
+      <!-- Security badge -->
+      <div style="background:linear-gradient(135deg,#e8f5e9,#e3f2fd);border-radius:12px;padding:10px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid #c8e6c9">
+        <span style="font-size:1.4rem">🛡️</span>
+        <div>
+          <div style="font-size:.78rem;font-weight:800;color:#1b5e20">3-LAYER SECURITY ACTIVE</div>
+          <div style="font-size:.7rem;color:#2e7d32;margin-top:1px">📍 GPS Location &nbsp;•&nbsp; 📸 Selfie &nbsp;•&nbsp; 🤖 AI Face ID</div>
+        </div>
+      </div>
+      <div class="fg"><label>📱 Phone Number (Login ID)</label><input class="fc" id="tU" placeholder="e.g. 9985649547" inputmode="numeric"/></div>
+      <div class="fg"><label>🔑 Password</label><input class="fc" type="password" id="tP" placeholder="Enter your password"/></div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:14px"><a href="#" onclick="forgotPass('teacher')" style="font-size:.78rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a></div>
       
       <!-- Login verification area -->
       <div id="lgVerifyArea" style="display:none;margin-top:12px;border-top:1.5px dashed var(--bd);padding-top:12px">
-        <p style="font-size:.75rem;font-weight:700;color:var(--t2);margin-bottom:8px;text-align:center">📸 SECURITY CHECK: LOCATION & PHOTO REQUIRED</p>
-        
-        <!-- GPS Status -->
+        <p style="font-size:.75rem;font-weight:700;color:var(--t2);margin-bottom:8px;text-align:center">📸 SECURITY CHECK: LOCATION &amp; PHOTO REQUIRED</p>
         <div class="ls ls-c" id="lgLStat" style="margin:5px 0 10px;padding:8px 10px;font-size:.78rem">
           <span style="font-size:1.1rem">⏳</span>
           <div id="lgLTxt">GPS location required</div>
         </div>
-        
-        <!-- Camera area -->
         <div id="lgCamArea" style="display:none;flex-direction:column;align-items:center;gap:8px;margin-bottom:10px">
-          <video id="lgFeed" autoplay playsinline style="width:100%;max-width:180px;border-radius:10px;border:2px solid var(--bd)"></video>
+          <div style="position:relative;width:100%;max-width:200px">
+            <video id="lgFeed" autoplay playsinline style="width:100%;border-radius:14px;border:3px solid var(--p)"></video>
+            <div style="position:absolute;top:6px;right:6px;background:rgba(26,115,232,.85);color:#fff;font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:20px">🔴 LIVE</div>
+          </div>
           <canvas id="lgCanvas" style="display:none"></canvas>
-          <img id="lgPhoto" style="width:100%;max-width:180px;border-radius:10px;border:2px solid var(--s);display:none" alt="Selfie" />
-          <button class="btn bp" id="btnLgCap" onclick="capLoginPhoto()" style="padding:6px 12px;font-size:.78rem">📸 Take Login Selfie</button>
+          <img id="lgPhoto" style="width:100%;max-width:200px;border-radius:14px;border:3px solid var(--s);display:none" alt="Selfie"/>
+          <button class="btn bp" id="btnLgCap" onclick="capLoginPhoto()" style="padding:8px 18px;font-size:.82rem">📸 Take Login Selfie</button>
         </div>
       </div>
       
-      <button class="btn bs bfull" id="btnLgAction" onclick="handleTeacherLogin()">🔐 Teacher Login</button>
-      <p style="text-align:center;margin-top:9px;font-size:.76rem;color:var(--t2)">Use your Phone Number as Login ID</p>
+      <button class="btn bs bfull" id="btnLgAction" onclick="handleTeacherLogin()" style="padding:13px;font-size:1rem;letter-spacing:.3px">🔐 Trainer Login</button>
+      <p style="text-align:center;margin-top:10px;font-size:.76rem;color:var(--t2)">🔒 Secured with AI Face Recognition</p>
     </div>
     <div class="lcopy">©Copyright Yug Shakti • @iamjeevapilli • All Rights Reserved</div>
   </div>
@@ -955,48 +965,75 @@ tbody tr:nth-child(8){animation-delay:.32s}
 
   <!-- MARK ATTENDANCE -->
   <div class="pg" id="pg-mark">
-    <div class="card" style="max-width:480px;margin:0 auto">
-      <div class="ctit" style="flex-direction:column;text-align:center;gap:5px">
-        <span style="font-size:1.8rem">📸</span>Mark My Attendance
-        <span id="attTime" style="font-size:.78rem;color:var(--t2);font-weight:400"></span>
-      </div>
-      <div class="stps"><div class="sd on" id="d1"></div><div class="sd" id="d2"></div><div class="sd" id="d3"></div></div>
-      <div id="mAlt"></div>
-      <div id="mS1">
-        <div style="text-align:center;margin-bottom:14px">
-          <div class="geo chk" id="gRing">📍</div>
-          <p style="font-weight:800;font-size:.98rem" id="gTit">Verify Your Location</p>
-          <p style="font-size:.81rem;color:var(--t2);margin-top:4px">School: <strong id="mySchool" style="color:var(--p)"></strong></p>
+    <div style="max-width:500px;margin:0 auto">
+      <!-- Header Card -->
+      <div style="background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:18px;padding:22px 20px;margin-bottom:16px;color:#fff;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,.08);border-radius:50%"></div>
+        <div style="position:absolute;bottom:-30px;left:30px;width:80px;height:80px;background:rgba(255,255,255,.05);border-radius:50%"></div>
+        <div style="font-size:2rem;margin-bottom:6px">📸</div>
+        <div style="font-size:1.2rem;font-weight:900">Mark Attendance</div>
+        <div id="attTime" style="font-size:.78rem;opacity:.85;margin-top:3px"></div>
+        <!-- Step indicators -->
+        <div style="display:flex;gap:8px;margin-top:14px;align-items:center">
+          <div id="d1" class="sd on" style="flex:1;height:5px;border-radius:3px"></div>
+          <div id="d2" class="sd" style="flex:1;height:5px;border-radius:3px"></div>
+          <div id="d3" class="sd" style="flex:1;height:5px;border-radius:3px"></div>
         </div>
-        <div class="ls ls-c" id="lStat">
-          <span style="font-size:1.3rem">⏳</span>
+        <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:.65rem;opacity:.75">
+          <span>📍 Location</span><span>🤖 Face ID</span><span>✅ Done</span>
+        </div>
+      </div>
+
+      <div id="mAlt"></div>
+
+      <!-- Step 1: Location -->
+      <div id="mS1" class="card" style="border-radius:16px">
+        <div style="text-align:center;padding:10px 0 16px">
+          <div class="geo chk" id="gRing" style="font-size:2.5rem;margin-bottom:10px">📍</div>
+          <div style="font-weight:900;font-size:1.05rem" id="gTit">Verify Your Location</div>
+          <div style="font-size:.82rem;color:var(--t2);margin-top:5px">School: <strong id="mySchool" style="color:var(--p)"></strong></div>
+        </div>
+        <div class="ls ls-c" id="lStat" style="margin-bottom:14px">
+          <span style="font-size:1.4rem">⏳</span>
           <div><div id="lTxt">Click button to verify location</div><div id="lDist" style="font-size:.75rem;font-weight:400;margin-top:2px"></div></div>
         </div>
-        <button class="btn bp bfull" onclick="chkLoc()">📍 Verify My Location Now</button>
+        <button class="btn bp bfull" onclick="chkLoc()" style="padding:13px;font-size:.95rem">📍 Verify My Location</button>
+        <div style="text-align:center;margin-top:10px;font-size:.72rem;color:var(--t2)">⚡ Uses GPS to confirm you are at school</div>
       </div>
+
+      <!-- Step 2: Camera + FRS -->
       <div id="mS2" style="display:none">
-        <div class="alt a-s">✅ Location verified! Now take your selfie 📸</div>
+        <div class="alt a-s" style="border-radius:12px;margin-bottom:12px">✅ Location verified! Now complete Face ID verification 🤖</div>
         <!-- FRS Status bar -->
-        <div id="frsStatus" style="display:none;padding:9px 13px;border-radius:9px;font-size:.82rem;font-weight:700;margin-bottom:10px;text-align:center;background:#eef2ff;color:#1a73e8;border:1.5px solid #c7d7fc;">🤖 AI Loading...</div>
-        <div class="camw" style="position:relative">
-          <video id="vFeed" autoplay playsinline></video>
-          <!-- FRS face overlay canvas -->
-          <canvas id="frsCanvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
-          <canvas id="pCanvas"></canvas>
-          <img id="cPhoto" alt=""/>
-          <div class="cbtns">
-            <button class="btn bp" id="bCam" onclick="startCam()">📷 Open Camera</button>
-            <button class="btn bs" id="bCap" onclick="capPhoto()" style="display:none">📸 Verify & Capture</button>
-            <button class="btn bo" id="bRtk" onclick="rtkPhoto()" style="display:none">🔄 Retake</button>
+        <div id="frsStatus" style="display:none;padding:11px 15px;border-radius:12px;font-size:.83rem;font-weight:700;margin-bottom:12px;text-align:center;background:#eef2ff;color:#1a73e8;border:1.5px solid #c7d7fc;">🤖 AI Loading...</div>
+        <div class="card" style="border-radius:16px;padding:16px">
+          <div style="font-size:.78rem;font-weight:800;color:var(--t2);text-align:center;margin-bottom:10px;letter-spacing:.5px">📸 FACE VERIFICATION</div>
+          <div class="camw" style="position:relative;border-radius:14px;overflow:hidden">
+            <video id="vFeed" autoplay playsinline style="border-radius:12px"></video>
+            <canvas id="frsCanvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+            <canvas id="pCanvas"></canvas>
+            <img id="cPhoto" alt="" style="border-radius:12px"/>
+            <!-- Live badge -->
+            <div id="liveBadge" style="position:absolute;top:10px;right:10px;background:rgba(217,48,37,.9);color:#fff;font-size:.62rem;font-weight:900;padding:3px 8px;border-radius:20px;display:none">🔴 LIVE</div>
+          </div>
+          <div class="cbtns" style="margin-top:12px;gap:10px">
+            <button class="btn bp" id="bCam" onclick="startCam();$('liveBadge').style.display='block'" style="padding:10px 18px">📷 Open Camera</button>
+            <button class="btn bs" id="bCap" onclick="capPhoto();$('liveBadge').style.display='none'" style="display:none;padding:10px 18px">🤖 Verify &amp; Capture</button>
+            <button class="btn bo" id="bRtk" onclick="rtkPhoto();$('liveBadge').style.display='block'" style="display:none;padding:10px 18px">🔄 Retake</button>
           </div>
         </div>
-        <button class="btn bs bfull" id="bSub" onclick="subAtt()" disabled style="margin-top:15px">✅ Submit Attendance</button>
+        <button class="btn bs bfull" id="bSub" onclick="subAtt()" disabled style="margin-top:14px;padding:14px;font-size:1rem">✅ Submit Attendance</button>
       </div>
-      <div id="mS3" style="display:none;text-align:center;padding:16px 0">
-        <div style="font-size:3.5rem;margin-bottom:11px">🎉</div>
-        <h2 style="color:var(--s);font-size:1.3rem;margin-bottom:6px">Attendance Submitted!</h2>
-        <p style="color:var(--t2);font-size:.86rem">Your attendance has been recorded for today.</p>
-        <div id="subInfo" style="margin-top:13px;padding:12px;background:#f8f9fa;border-radius:9px;font-size:.83rem;text-align:left;line-height:1.9"></div>
+
+      <!-- Step 3: Success -->
+      <div id="mS3" style="display:none">
+        <div class="card" style="border-radius:18px;text-align:center;padding:30px 20px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9)">
+          <div style="font-size:4rem;margin-bottom:10px;animation:bnc 1s infinite alternate">🎉</div>
+          <div style="font-size:1.4rem;font-weight:900;color:#0f9d58;margin-bottom:6px">Attendance Submitted!</div>
+          <div style="color:var(--t2);font-size:.88rem">Your attendance has been recorded for today.</div>
+          <div id="subInfo" style="margin-top:16px;padding:14px;background:#fff;border-radius:12px;font-size:.84rem;text-align:left;line-height:2;box-shadow:0 2px 8px rgba(0,0,0,.06)"></div>
+          <div style="margin-top:14px;padding:10px;background:rgba(15,157,88,.1);border-radius:10px;font-size:.76rem;color:#0f9d58;font-weight:700">🤖 Verified by AI Face Recognition</div>
+        </div>
       </div>
     </div>
     <div class="footer">©Copyright Yug Shakti • @iamjeevapilli • All Rights Reserved</div>
@@ -1004,8 +1041,13 @@ tbody tr:nth-child(8){animation-delay:.32s}
 
   <!-- MY HISTORY -->
   <div class="pg" id="pg-history">
-    <div class="card"><div class="ctit">📅 My Attendance History</div>
-      <div id="myS" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:15px"></div>
+    <!-- Stats hero -->
+    <div style="background:linear-gradient(135deg,#0f9d58,#1b5e20);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff">
+      <div style="font-size:.8rem;opacity:.8;margin-bottom:4px">MY ATTENDANCE OVERVIEW</div>
+      <div id="myS" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px"></div>
+    </div>
+    <div class="card" style="border-radius:16px">
+      <div class="ctit">📅 My Attendance History</div>
       <div class="tw"><table><thead><tr><th>#</th><th>Date</th><th>Day</th><th>Time</th><th>Status</th><th>Distance</th><th>Photo</th></tr></thead><tbody id="hBody"></tbody></table></div>
     </div>
     <div class="footer">©Copyright Yug Shakti • @iamjeevapilli • All Rights Reserved</div>
@@ -1957,6 +1999,16 @@ async function forgotPass(role) {
   }
 }
 
+function clearLoginCache(){
+  if(!confirm('🧹 Clear Login Cache?\n\nThis will clear the stored password from your browser memory.\nAfter clearing, you can log in with the default password.\n\nContinue?'))return;
+  localStorage.removeItem('yugg_adminPassHash');
+  localStorage.removeItem('yugg_adminPassHashed');
+  localStorage.removeItem('yugg_adminPass');
+  localStorage.removeItem('yugg_lockout');
+  sessionStorage.clear();
+  alert('✅ Cache cleared!\n\nNow reload the page and login with:\nUsername: admin\nPassword: YugShakti@0707');
+  location.reload();
+}
 function doLogout(){stopCam();resetLoginCheckForm();SESSION.destroy();CU=null;PHOTO=null;LOC=null;$('app').style.display='none';$('loginPg').style.display='flex';}
 function resetAll(){
   if(confirm('Reset ALL teachers list to original 206 trainers?')){
@@ -2782,11 +2834,38 @@ function resetMark(){
 function rHist(){
   const att=DB.get('att',[]).filter(a=>a.teacherID===CU.ph).reverse();
   const pr=att.filter(a=>a.status==='approved').length;
+  const rate=att.length?Math.round(pr/att.length*100):0;
+  // Calculate streak
+  let streak=0;
+  const sorted=[...att].sort((a,b)=>b.date.localeCompare(a.date));
+  const dateSet=new Set(sorted.filter(a=>a.status==='approved').map(a=>a.date));
+  let d=new Date();
+  for(let i=0;i<60;i++){
+    const ds=d.toISOString().split('T')[0];
+    if(dateSet.has(ds)){streak++;}
+    else if(i>0)break;
+    d.setDate(d.getDate()-1);
+  }
+  const badge=rate>=90?'🏆 Excellent':rate>=75?'⭐ Good':rate>=50?'📈 Average':'💪 Keep Going';
   $('myS').innerHTML=`
-    <div class="sc cg" style="flex:1;min-width:100px"><span class="si">✅</span><div><div class="sv">${pr}</div><div class="sl">Present</div></div></div>
-    <div class="sc cb" style="flex:1;min-width:100px"><span class="si">📅</span><div><div class="sv">${att.length}</div><div class="sl">Total</div></div></div>
-    <div class="sc co" style="flex:1;min-width:100px"><span class="si">📊</span><div><div class="sv">${att.length?Math.round(pr/att.length*100):0}%</div><div class="sl">Rate</div></div></div>`;
-  $('hBody').innerHTML=att.length?att.map((a,i)=>`<tr><td>${i+1}</td><td>${a.date}</td><td>${dayN(a.date)}</td><td>${a.time}</td><td><span class="badge ${a.status==='approved'?'bg-g':'bg-r'}">${a.status==='approved'?'✅ Present':'❌ Rejected'}</span></td><td>${a.distance!=null?a.distance+'m':'—'}</td><td>${a.photo?`<img class="pthmb" src="${a.photo}" onclick="vPh('${a.photo}','${CU.name}','${a.date}')"/>`:'—'}</td></tr>`).join('')
+    <div style="flex:1;min-width:80px;background:rgba(255,255,255,.18);border-radius:12px;padding:12px 10px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:900">${pr}</div>
+      <div style="font-size:.7rem;opacity:.85;margin-top:2px">✅ Present</div>
+    </div>
+    <div style="flex:1;min-width:80px;background:rgba(255,255,255,.18);border-radius:12px;padding:12px 10px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:900">${att.length}</div>
+      <div style="font-size:.7rem;opacity:.85;margin-top:2px">📅 Total</div>
+    </div>
+    <div style="flex:1;min-width:80px;background:rgba(255,255,255,.18);border-radius:12px;padding:12px 10px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:900">${rate}%</div>
+      <div style="font-size:.7rem;opacity:.85;margin-top:2px">📊 Rate</div>
+    </div>
+    <div style="flex:1;min-width:80px;background:rgba(255,255,255,.18);border-radius:12px;padding:12px 10px;text-align:center">
+      <div style="font-size:1.6rem;font-weight:900">🔥${streak}</div>
+      <div style="font-size:.7rem;opacity:.85;margin-top:2px">Day Streak</div>
+    </div>
+    <div style="flex:1;min-width:100%;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 12px;text-align:center;font-size:.78rem;font-weight:700">${badge}</div>`;
+  $('hBody').innerHTML=att.length?att.map((a,i)=>`<tr><td>${i+1}</td><td>${a.date}</td><td>${dayN(a.date)}</td><td>${a.time}</td><td><span class="badge ${a.status==='approved'?'bg-g':'bg-r'}">${a.status==='approved'?'✅ Present':'❌ '+( a.reason||'Rejected')}</span></td><td>${a.distance!=null?a.distance+'m':'—'}</td><td>${a.photo?`<img class="pthmb" src="${a.photo}" onclick="vPh('${a.photo}','${CU.name}','${a.date}')"/>`:'—'}</td></tr>`).join('')
     :`<tr><td colspan="7"><div class="emp"><div class="ei">📭</div><p>No history yet</p></div></td></tr>`;
 }
 function expCSV(){
