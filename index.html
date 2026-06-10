@@ -2741,10 +2741,10 @@ async function capPhoto(){
         await frsRegisterFace(descriptor,c);
         return;
       } else {
-        // Compare with stored — threshold 0.44: strict yet reliable
+        // Compare with stored — threshold 0.50: moderate strictness
         const dist=faceapi.euclideanDistance(descriptor,storedDesc);
         console.log('FRS distance:',dist,'score:',detection.detection.score);
-        if(dist>0.44){
+        if(dist>0.50){
           // Face does NOT match — red flash
           if(sc){sc.classList.add('scan-fail');const lbl=sc.querySelector('.scan-label');if(lbl)lbl.textContent='🚨 MISMATCH DETECTED!';}
           if(st){st.textContent='🚨 FACE MISMATCH! This is not the registered trainer!';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
