@@ -960,13 +960,13 @@ tbody tr:nth-child(8){animation-delay:.32s}
           <button class="btn bp" onclick="saveSet()">💾 Save Settings</button>
         </div>
       </div>
-      <div class="sts">
-        <h3>🕐 Attendance Time Window</h3>
+      <div class="sts" style="opacity: 0.85; border-left: 3px solid var(--p);">
+        <h3>🕐 Attendance Time Window <span style="font-size:0.82rem;font-weight:normal;color:var(--t2)">🔒 (Locked to System Default)</span></h3>
         <div class="r2">
-          <div class="fg"><label>Opens At</label><input class="fc" type="time" id="sOp" value="06:00"/></div>
-          <div class="fg"><label>Closes At</label><input class="fc" type="time" id="sCl" value="18:30"/></div>
+          <div class="fg"><label>Opens At</label><input class="fc" type="time" id="sOp" value="08:30" disabled style="background:#f1f3f5; cursor:not-allowed; font-weight:700"/></div>
+          <div class="fg"><label>Closes At</label><input class="fc" type="time" id="sCl" value="18:30" disabled style="background:#f1f3f5; cursor:not-allowed; font-weight:700"/></div>
         </div>
-        <button class="btn bp" onclick="saveSet()">💾 Save Settings</button>
+        <p style="font-size:0.75rem; color:var(--t2); margin-top:6px">⚠️ Opening time (8:30 AM) and Closing time (6:30 PM) are locked by system rules.</p>
       </div>
       <div class="sts">
         <h3>💬 WhatsApp Reporting Settings</h3>
@@ -1740,7 +1740,7 @@ async function initApp(){
     DB.set('teachersHashed',true);
   }
 
-  const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'06:00',close:'18:30',waPhone:'919010809057, 918897430557, 919959195930, 916281661322',waAuto:true});
+  const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'08:30',close:'18:30',waPhone:'919010809057, 918897430557, 919959195930, 916281661322',waAuto:true});
   if(!s.name||s.name==='YUG Shakti Vocational Education  - Telangana'||s.name==='YUG Shakti Dept'){
     s.name='Yug Shakti Vocational Education Telangana';
   }
@@ -1748,9 +1748,8 @@ async function initApp(){
     s.waPhone='919010809057, 918897430557, 919959195930, 916281661322';
     s.waAuto=true;
   }
-  if(s.close==='10:30'){
-    s.close='18:30';
-  }
+  s.open='08:30';
+  s.close='18:30';
   DB.set('settings',s);
   DB.set('att',existing);
 
@@ -2628,8 +2627,8 @@ function saveSet(){
     lat:la,
     lng:lo,
     radius:parseInt($('sR').value)||300,
-    open:$('sOp').value,
-    close:$('sCl').value,
+    open:'08:30',
+    close:'18:30',
     waPhone:cleanList||'919010809057, 918897430557, 919959195930, 916281661322',
     waAuto:$('sWaAuto').checked
   });
@@ -2656,8 +2655,8 @@ async function chgPass(){
 
 function isAttendanceLocked(){
   const s=DB.get('settings',{});
-  const closeTime=s.close||'10:30';
-  const openTime=s.open||'06:00';
+  const closeTime=s.close||'18:30';
+  const openTime=s.open||'08:30';
   const now=getSecureDate();
   const hhmm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   if(hhmm>closeTime||hhmm<openTime) return {locked:true,closeTime,openTime,hhmm};
@@ -2983,7 +2982,7 @@ function sendWhatsAppReport(){
   const teachers=DB.get('teachers',[]);
   const s=DB.get('settings',{});
   const schoolName=s.name||'YUG Dept';
-  const closeTime=s.close||'10:30';
+  const closeTime=s.close||'18:30';
   const now=getSecureDate();
   const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   
