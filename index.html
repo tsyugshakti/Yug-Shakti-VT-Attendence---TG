@@ -932,8 +932,15 @@ tbody tr:nth-child(8){animation-delay:.32s}
         <div><label style="font-size:.75rem;font-weight:700;color:var(--t2);display:block;margin-bottom:4px">TO</label><input type="date" id="rpT"/></div>
         <button class="btn bp" style="align-self:flex-end" onclick="genRpt()">📊 Generate</button>
         <button class="btn bo" style="align-self:flex-end" onclick="expRpt()">📤 Export CSV</button>
+        <button class="btn bs" style="align-self:flex-end;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none" onclick="sendWhatsAppReport()">📱 WhatsApp Report</button>
       </div>
       <div id="rptA"></div>
+    </div>
+    <!-- Today's Present Summary Card -->
+    <div class="card" style="margin-top:14px;border-left:4px solid #25D366">
+      <div class="ctit" style="gap:8px">📋 Today's Attendance Summary</div>
+      <div id="todaySummary" style="font-size:.85rem;color:var(--t2);padding:8px 0">Click "Generate" or "WhatsApp Report" to see today's summary.</div>
+      <button class="btn" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:.88rem;font-weight:700;width:100%;margin-top:8px;cursor:pointer" onclick="sendWhatsAppReport()">📲 Send Today's Report to WhatsApp (+919010809057)</button>
     </div>
   </div>
 
@@ -1007,6 +1014,13 @@ tbody tr:nth-child(8){animation-delay:.32s}
       </div>
 
       <div id="mAlt"></div>
+      <!-- Attendance Lockout Banner -->
+      <div id="attLockBanner" style="display:none;background:linear-gradient(135deg,#b71c1c,#d32f2f);color:#fff;border-radius:14px;padding:20px;text-align:center;margin-bottom:12px">
+        <div style="font-size:2.5rem;margin-bottom:6px">🔒</div>
+        <div style="font-size:1.1rem;font-weight:900;margin-bottom:4px">Attendance Closed</div>
+        <div id="lockBannerMsg" style="font-size:.84rem;opacity:.92">The attendance window has closed for today.</div>
+        <div style="margin-top:10px;font-size:.72rem;opacity:.75">Contact your admin if you need assistance.</div>
+      </div>
 
       <!-- Step 1: Location -->
       <div id="mS1" class="card" style="border-radius:16px">
@@ -2578,7 +2592,28 @@ async function chgPass(){
   $('cp0').value='';$('np1').value='';$('np2').value='';
 }
 
+function isAttendanceLocked(){
+  const s=DB.get('settings',{});
+  const closeTime=s.close||'10:30';
+  const openTime=s.open||'06:00';
+  const now=getSecureDate();
+  const hhmm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  if(hhmm>closeTime||hhmm<openTime) return {locked:true,closeTime,openTime,hhmm};
+  return {locked:false,closeTime,openTime,hhmm};
+}
+function showLockBanner(closeTime){
+  const b=$('attLockBanner');
+  if(b){b.style.display='block';$('lockBannerMsg').textContent=`Attendance closed at ${closeTime}. Today's window is over.`;}
+  $('mS1').style.display='none';
+}
 function chkLoc(){
+  // Check attendance time window first
+  const lk=isAttendanceLocked();
+  if(lk.locked){
+    showLockBanner(lk.closeTime);
+    sAlt('mAlt',`🔒 Attendance window closed at ${lk.closeTime}. You cannot mark attendance now.`,'error');
+    return;
+  }
   const t=CU;
   if(!t.lat||!t.lng){setGeo('no','❌','No School Coordinates','Contact admin to set your school GPS.');sAlt('mAlt','❌ School GPS not set. Contact admin.','error');return;}
   setGeo('chk','📍','Detecting Your Location...','Please wait...');
@@ -2685,11 +2720,30 @@ async function capPhoto(){
     const st=$('frsStatus');
     if(st){st.style.display='block';st.textContent='🔍 Verifying your identity with AI...';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
     try{
-      const detection=await faceapi.detectSingleFace(c).withFaceLandmarks().withFaceDescriptor();
+      // Multi-sample detection: detect all faces and pick highest confidence
+      const allDetections=await faceapi.detectAllFaces(c,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.6})).withFaceLandmarks().withFaceDescriptors();
+      // Also run SSD for comparison
+      const ssdDetections=await faceapi.detectAllFaces(c).withFaceLandmarks().withFaceDescriptors();
+      const detections=[...allDetections,...ssdDetections];
+      const detection=detections.length>0?detections.reduce((best,d)=>((d.detection.score>best.detection.score)?d:best),detections[0]):null;
       if(!detection){
         if(st){st.textContent='❌ No face detected in photo! Please retake.';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
         sAlt('mAlt','❌ No face detected in the photo. Please retake.','error');
         // Restart camera
+        $('vFeed').style.display='block';frsStartOverlay();
+        return;
+      }
+      // Reject if detection confidence is low
+      if(detection.detection.score<0.7){
+        if(st){st.textContent='⚠️ Face unclear — please ensure good lighting and look directly at camera.';st.style.background='#fff3e0';st.style.color='#e65100';st.style.borderColor='#ffcc80';}
+        sAlt('mAlt','⚠️ Face not clear enough. Ensure good lighting and look directly at the camera.','warning');
+        $('vFeed').style.display='block';frsStartOverlay();
+        return;
+      }
+      // If multiple faces detected, reject (prevent bypass)
+      if(detections.length>1){
+        if(st){st.textContent='🚨 Multiple faces detected! Only the registered trainer can mark attendance.';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
+        sAlt('mAlt','🚨 Multiple faces detected. Only one person should be in front of the camera.','error');
         $('vFeed').style.display='block';frsStartOverlay();
         return;
       }
@@ -2702,10 +2756,10 @@ async function capPhoto(){
         await frsRegisterFace(descriptor,c);
         return;
       } else {
-        // Compare with stored
+        // Compare with stored — use strict threshold 0.42
         const dist=faceapi.euclideanDistance(descriptor,storedDesc);
-        console.log('FRS distance:',dist);
-        if(dist>0.45){
+        console.log('FRS distance:',dist,'confidence:',detection.detection.score);
+        if(dist>0.42){
           // Face does NOT match — red flash
           if(sc){sc.classList.add('scan-fail');const lbl=sc.querySelector('.scan-label');if(lbl)lbl.textContent='🚨 MISMATCH DETECTED!';}
           if(st){st.textContent='🚨 FACE MISMATCH! This is not the registered trainer!';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
@@ -2772,6 +2826,13 @@ function stopCam(){
 }
 function subAtt(){
   if(!LOC||!PHOTO){sAlt('mAlt','⚠️ Please complete all steps first','error');return;}
+  // Hard time lockout — recheck at submission time
+  const lk=isAttendanceLocked();
+  if(lk.locked){
+    showLockBanner(lk.closeTime);
+    sAlt('mAlt',`🔒 Attendance window closed at ${lk.closeTime}. Submission blocked.`,'error');
+    return;
+  }
   const att=DB.get('att',[]);
   if(att.find(a=>a.teacherID===CU.ph&&a.date===today()&&a.status==='approved')){sAlt('mAlt','⚠️ Already marked attendance today!','warning');return;}
   const now=getSecureDate();
@@ -2806,6 +2867,13 @@ function resetMark(){
   if(att.find(a=>a.teacherID===CU.ph&&a.date===today()&&a.status==='approved')){
     $('mS1').style.display='none';$('mS3').style.display='block';
     $('subInfo').innerHTML='<div style="color:var(--s);font-weight:800;font-size:.95rem">✅ You have already marked attendance today!</div>';
+  }
+  // Check lockout and show banner if attendance window is closed
+  const lk=isAttendanceLocked();
+  if(lk.locked){
+    showLockBanner(lk.closeTime);
+  } else {
+    const lb=$('attLockBanner');if(lb)lb.style.display='none';
   }
 }
 function rHist(){
@@ -2854,6 +2922,63 @@ function dlCSV(rows,fname){
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=fname;a.click();
 }
 function vPh(src,name,info){$('pvImg').src=src;$('pvTit').textContent='📸 '+name;$('pvInf').textContent='📅 '+info;openModal('pvM');}
+
+function sendWhatsAppReport(){
+  const todayStr=today();
+  const att=DB.get('att',[]).filter(a=>a.date===todayStr&&a.status==='approved');
+  const teachers=DB.get('teachers',[]);
+  const s=DB.get('settings',{});
+  const schoolName=s.name||'YUG Dept';
+  const closeTime=s.close||'10:30';
+  const now=getSecureDate();
+  const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  
+  // Update today summary in admin panel
+  const summEl=$('todaySummary');
+  if(summEl){
+    if(att.length===0){
+      summEl.textContent=`No attendance recorded today (${todayStr}) yet.`;
+    } else {
+      summEl.innerHTML=att.map((a,i)=>`<div style="padding:4px 0;border-bottom:1px solid var(--bd)">${i+1}. <strong>${a.teacherName}</strong> — ${a.school||'—'} (${a.time})</div>`).join('');
+    }
+  }
+  
+  // Build WhatsApp message
+  const lines=[];
+  lines.push(`📋 *ATTENDANCE REPORT — ${todayStr}*`);
+  lines.push(`🏫 *${schoolName}*`);
+  lines.push(`⏰ Report Time: ${timeStr}`);
+  lines.push(`🔒 Attendance closes at: ${closeTime}`);
+  lines.push(`👥 Total Present: *${att.length} / ${teachers.length}*`);
+  lines.push('');
+  if(att.length>0){
+    lines.push('✅ *PRESENT TODAY:*');
+    att.forEach((a,i)=>{
+      lines.push(`${i+1}. ${a.teacherName} (${a.school||'—'}) — ${a.time}`);
+    });
+  } else {
+    lines.push('⚠️ No attendance recorded yet today.');
+  }
+  
+  // Check for absent teachers
+  const presentIDs=new Set(att.map(a=>a.teacherID));
+  const absentTeachers=teachers.filter(t=>!presentIDs.has(t.ph));
+  if(absentTeachers.length>0){
+    lines.push('');
+    lines.push(`❌ *ABSENT (${absentTeachers.length}):*`);
+    absentTeachers.forEach((t,i)=>{
+      lines.push(`${i+1}. ${t.name} (${t.school||'—'})`);
+    });
+  }
+  
+  lines.push('');
+  lines.push('_Sent by YUG Shakti Attendance System_');
+  
+  const message=lines.join('\n');
+  const encoded=encodeURIComponent(message);
+  const waURL=`https://wa.me/919010809057?text=${encoded}`;
+  window.open(waURL,'_blank');
+}
 </script>
 
 <!-- MOTION JS -->
