@@ -971,8 +971,8 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div class="sts">
         <h3>💬 WhatsApp Reporting Settings</h3>
         <div class="fg" style="margin-bottom:12px">
-          <label>WhatsApp Recipients (comma-separated, with country code, e.g. 919010809057, 918897430557)</label>
-          <input class="fc" id="sWa" placeholder="919010809057, 918897430557..."/>
+          <label>WhatsApp Recipients (comma-separated, with country code, e.g. 919010809057)</label>
+          <input class="fc" id="sWa" placeholder="919010809057"/>
         </div>
         <div class="fg" style="display:flex;align-items:center;margin-bottom:12px">
           <input type="checkbox" id="sWaAuto" style="width:20px;height:20px;margin-right:8px;cursor:pointer"/>
@@ -1740,12 +1740,12 @@ async function initApp(){
     DB.set('teachersHashed',true);
   }
 
-  const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'08:30',close:'18:30',waPhone:'919010809057, 918897430557, 919959195930, 916281661322',waAuto:true});
+  const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'08:30',close:'18:30',waPhone:'919010809057',waAuto:true});
   if(!s.name||s.name==='YUG Shakti Vocational Education  - Telangana'||s.name==='YUG Shakti Dept'){
     s.name='Yug Shakti Vocational Education Telangana';
   }
-  if(!s.waPhone){
-    s.waPhone='919010809057, 918897430557, 919959195930, 916281661322';
+  if(!s.waPhone||s.waPhone==='919010809057, 918897430557, 919959195930, 916281661322'){
+    s.waPhone='919010809057';
     s.waAuto=true;
   }
   s.open='08:30';
@@ -2307,7 +2307,7 @@ function rDash(){
   $('logsBody').innerHTML=logs.slice(-10).reverse().map(l=>`<tr><td>${l.photo ? `<img class="pthmb" src="${l.photo}" onclick="vPh('${l.photo}','${l.name}','Login Attempt - ${l.ts}')">` : '—'}</td><td><strong>${l.ts}</strong></td><td><span class="badge bg-b">${l.ph}</span></td><td><strong>${l.name}</strong></td><td style="color:var(--t2);font-size:.78rem">${l.details}</td><td><span class="badge ${l.status==='Success'?'bg-g':'bg-r'}">${l.status==='Success'?'✅ Success':'❌ Failed'}</span></td></tr>`).join('')
   ||`<tr><td colspan="6"><div class="emp"><div class="ei">🔑</div><p>No login attempts recorded yet</p></div></td></tr>`;
 
-  const waPhone=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+  const waPhone=s.waPhone||'919010809057';
   const numRecipients=waPhone.split(',').map(n=>n.trim()).filter(Boolean).length;
   const waBtn = $('waReportBtn');
   if(waBtn) waBtn.textContent = `📲 Send Today's Report to WhatsApp (${numRecipients} Recipients)`;
@@ -2610,7 +2610,7 @@ function loadSet(){
   if(s.lat)$('sLa').value=s.lat;if(s.lng)$('sLo').value=s.lng;
   if(s.radius)$('sR').value=s.radius;if(s.name)$('sN').value=s.name;
   if(s.open)$('sOp').value=s.open;if(s.close)$('sCl').value=s.close;
-  $('sWa').value=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+  $('sWa').value=s.waPhone||'919010809057';
   $('sWaAuto').checked=s.waAuto!==false;
 }
 function saveSet(){
@@ -2629,7 +2629,7 @@ function saveSet(){
     radius:parseInt($('sR').value)||300,
     open:'08:30',
     close:'18:30',
-    waPhone:cleanList||'919010809057, 918897430557, 919959195930, 916281661322',
+    waPhone:cleanList||'919010809057',
     waAuto:$('sWaAuto').checked
   });
   sAlt('sAlt','✅ Settings saved!','success');
@@ -3029,7 +3029,7 @@ function sendWhatsAppReport(){
   
   const message=lines.join('\n');
   const encoded=encodeURIComponent(message);
-  const rawPhoneList=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+  const rawPhoneList=s.waPhone||'919010809057';
   const numbers=rawPhoneList.split(',').map(n=>n.trim().replace(/[^0-9]/g,'')).filter(Boolean);
   numbers.forEach((num,index)=>{
     const waURL=`https://wa.me/${num}?text=${encoded}`;
@@ -3051,7 +3051,7 @@ function checkAutoWhatsAppReport(){
     const lastPrompt=DB.get('lastWaPromptDate','');
     if(lastPrompt!==todayStr){
       DB.set('lastWaPromptDate',todayStr);
-      const rawPhoneList=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+      const rawPhoneList=s.waPhone||'919010809057';
       const formattedList=rawPhoneList.split(',').map(n=>{
         const num=n.trim();
         if(num.startsWith('91') && num.length===12) return '+91 '+num.substring(2,7)+' '+num.substring(7);
