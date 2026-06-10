@@ -968,17 +968,17 @@ tbody tr:nth-child(8){animation-delay:.32s}
         </div>
         <p style="font-size:0.75rem; color:var(--t2); margin-top:6px">⚠️ Opening time (8:30 AM) and Closing time (6:30 PM) are locked by system rules.</p>
       </div>
-      <div class="sts">
-        <h3>💬 WhatsApp Reporting Settings</h3>
+      <div class="sts" style="opacity: 0.85; border-left: 3px solid var(--p);">
+        <h3>💬 WhatsApp Reporting Settings <span style="font-size:0.82rem;font-weight:normal;color:var(--t2)">🔒 (Locked to System Default)</span></h3>
         <div class="fg" style="margin-bottom:12px">
-          <label>WhatsApp Recipients (comma-separated, with country code, e.g. 919010809057)</label>
-          <input class="fc" id="sWa" placeholder="919010809057"/>
+          <label>WhatsApp Recipient Number</label>
+          <input class="fc" id="sWa" value="919010809057" disabled style="background:#f1f3f5; cursor:not-allowed; font-weight:700"/>
         </div>
         <div class="fg" style="display:flex;align-items:center;margin-bottom:12px">
           <input type="checkbox" id="sWaAuto" style="width:20px;height:20px;margin-right:8px;cursor:pointer"/>
           <label for="sWaAuto" style="cursor:pointer;font-weight:700">Auto-prompt / Auto-send at Close Time</label>
         </div>
-        <button class="btn bp" onclick="saveSet()">💾 Save Settings</button>
+        <p style="font-size:0.75rem; color:var(--t2); margin-top:6px">⚠️ The WhatsApp recipient number is locked by system rules.</p>
       </div>
       <div class="sts">
         <h3>🔑 Change Admin Password</h3>
@@ -1161,11 +1161,13 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div class="fg"><label>Sector</label><select class="fc" id="eSec"><option>APPAREL</option><option>BEAUTY AND WELLNESS</option><option>HEALTH CARE</option><option>AUTOMOTIVE</option><option>IT/ITES</option><option>ELECTRONICS AND HARDWARE</option></select></div>
       <div class="fg"><label>New Password (blank=keep)</label><input class="fc" type="password" id="ePas" placeholder="Leave blank to keep"/></div>
     </div>
+    <div id="editAlt"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:7px;flex-wrap:wrap">
       <button class="btn bo" onclick="closeModal('editTM')">Cancel</button>
       <button class="btn bd2" onclick="frsResetFace($('ePh').value)" title="Clear face registration so trainer must re-register face">🔓 Reset Face ID</button>
       <button class="btn bp" onclick="saveEdit()">💾 Save</button>
     </div>
+
   </div>
 </div>
 
@@ -1744,10 +1746,7 @@ async function initApp(){
   if(!s.name||s.name==='YUG Shakti Vocational Education  - Telangana'||s.name==='YUG Shakti Dept'){
     s.name='Yug Shakti Vocational Education Telangana';
   }
-  if(!s.waPhone||s.waPhone==='919010809057, 918897430557, 919959195930, 916281661322'){
-    s.waPhone='919010809057';
-    s.waAuto=true;
-  }
+  s.waPhone='919010809057';
   s.open='08:30';
   s.close='18:30';
   DB.set('settings',s);
@@ -2544,6 +2543,43 @@ function rVtsData() {
 }
 
 
+// ── Teacher Data Validation ──────────────────────────────────────────
+function validateTeacherData(t, all, isEdit){
+  const errors=[];
+  // 1. Mandatory fields
+  if(!t.ph||t.ph.trim()==='')   errors.push('Phone number is missing');
+  if(!t.name||t.name.trim()==='') errors.push('Name is missing');
+  if(!t.school||t.school.trim()==='') errors.push('School is missing');
+  if(!t.sector||t.sector.trim()==='') errors.push('Sector is missing');
+  // 2. Phone format – must be 10 digits
+  const phClean=t.ph.replace(/\D/g,'');
+  if(t.ph && (phClean.length!==10 || !/^[6-9]/.test(phClean))){
+    errors.push('Phone number is invalid (must be 10 digits starting with 6-9)');
+  }
+  // 3. Duplicate phone (skip own record in edit mode)
+  if(!isEdit && all && all.find(x=>x.ph===t.ph)){
+    errors.push('Phone number already exists for another trainer');
+  }
+  // 4. Duplicate YUG ID
+  if(t.yug && t.yug.trim()!==''){
+    const dupYug = all && all.find(x=>x.yug && x.yug.trim().toUpperCase()===t.yug.trim().toUpperCase() && (!isEdit || x.ph!==t.ph));
+    if(dupYug) errors.push(`YUG ID "${t.yug}" already assigned to ${dupYug.name}`);
+  }
+  // 5. Latitude / Longitude range
+  if(t.lat!==undefined && !isNaN(t.lat) && (t.lat<5||t.lat>37)) errors.push('Latitude seems out of India range');
+  if(t.lng!==undefined && !isNaN(t.lng) && (t.lng<67||t.lng>98)) errors.push('Longitude seems out of India range');
+  return errors;
+}
+
+function sendTeacherAlert(teacherName, errors){
+  const phone='919010809057';
+  const ts=getSecureDate().toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'});
+  const errList=errors.map((e,i)=>`${i+1}. ${e}`).join('%0a');
+  const msg=encodeURIComponent(`⚠️ Teacher Data Error\n\nTrainer: ${teacherName}\nTime: ${ts}\n\nIssues Found:\n${errors.map((e,i)=>`${i+1}. ${e}`).join('\n')}\n\n🔗 GeoAttend Admin Portal – Please review and correct the data.`);
+  const url=`https://wa.me/${phone}?text=${msg}`;
+  setTimeout(()=>window.open(url,'_blank'),300);
+}
+
 function addTch(){
   const ph=$('nPh').value.trim(),nm=$('nNm').value.trim();
   if(!ph||!nm){sAlt('addAlt','⚠️ Phone and Name required','error');return;}
@@ -2551,7 +2587,15 @@ function addTch(){
   if(all.find(t=>t.ph===ph)){sAlt('addAlt','⚠️ Phone already exists','error');return;}
   const s=DB.get('settings',{});
   const la=parseFloat($('nLa').value),lo=parseFloat($('nLo').value);
-  all.push({ph,name:nm,sector:$('nSec').value,school:$('nSch').value.trim(),yug:$('nYug').value.trim(),lat:isNaN(la)?s.lat:la,lng:isNaN(lo)?s.lng:lo,pass:$('nPas').value.trim()||'pass123'});
+  const newT={ph,name:nm,sector:$('nSec').value,school:$('nSch').value.trim(),yug:$('nYug').value.trim(),lat:isNaN(la)?s.lat:la,lng:isNaN(lo)?s.lng:lo,pass:$('nPas').value.trim()||'pass123'};
+  // Validate
+  const errs=validateTeacherData(newT,all,false);
+  if(errs.length){
+    sAlt('addAlt',`⚠️ ${errs[0]}. WhatsApp alert sent to admin.`,'error');
+    sendTeacherAlert(nm||ph, errs);
+    return;
+  }
+  all.push(newT);
   DB.set('teachers',all);closeModal('addTM');rTch();rDash();
   ['nPh','nNm','nSch','nLa','nLo','nYug'].forEach(i=>{$(i).value='';});
 }
@@ -2563,9 +2607,24 @@ function oEdit(ph){
 }
 function saveEdit(){
   const ph=$('ePh').value,all=DB.get('teachers',[]),i=all.findIndex(t=>t.ph===ph);if(i<0)return;
-  all[i].name=$('eNm').value.trim();all[i].school=$('eSch').value.trim();
-  all[i].lat=parseFloat($('eLa').value)||all[i].lat;all[i].lng=parseFloat($('eLo').value)||all[i].lng;
-  all[i].sector=$('eSec').value;
+  const updatedT={
+    ...all[i],
+    name:$('eNm').value.trim(),
+    school:$('eSch').value.trim(),
+    lat:parseFloat($('eLa').value)||all[i].lat,
+    lng:parseFloat($('eLo').value)||all[i].lng,
+    sector:$('eSec').value
+  };
+  // Validate
+  const errs=validateTeacherData(updatedT,all,true);
+  if(errs.length){
+    sAlt('editAlt',`⚠️ ${errs[0]}. WhatsApp alert sent to admin.`,'error');
+    sendTeacherAlert(updatedT.name||ph, errs);
+    return;
+  }
+  all[i].name=updatedT.name;all[i].school=updatedT.school;
+  all[i].lat=updatedT.lat;all[i].lng=updatedT.lng;
+  all[i].sector=updatedT.sector;
   const p=$('ePas').value.trim();if(p)all[i].pass=p;
   DB.set('teachers',all);closeModal('editTM');rTch();
   // Refresh trainer profile if currently open
@@ -2629,7 +2688,7 @@ function saveSet(){
     radius:parseInt($('sR').value)||300,
     open:'08:30',
     close:'18:30',
-    waPhone:cleanList||'919010809057',
+    waPhone:'919010809057',
     waAuto:$('sWaAuto').checked
   });
   sAlt('sAlt','✅ Settings saved!','success');
