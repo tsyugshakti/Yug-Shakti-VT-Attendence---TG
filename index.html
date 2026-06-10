@@ -2720,30 +2720,15 @@ async function capPhoto(){
     const st=$('frsStatus');
     if(st){st.style.display='block';st.textContent='🔍 Verifying your identity with AI...';st.style.background='#eef2ff';st.style.color='#1a73e8';st.style.borderColor='#c7d7fc';}
     try{
-      // Multi-sample detection: detect all faces and pick highest confidence
-      const allDetections=await faceapi.detectAllFaces(c,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.6})).withFaceLandmarks().withFaceDescriptors();
-      // Also run SSD for comparison
-      const ssdDetections=await faceapi.detectAllFaces(c).withFaceLandmarks().withFaceDescriptors();
-      const detections=[...allDetections,...ssdDetections];
-      const detection=detections.length>0?detections.reduce((best,d)=>((d.detection.score>best.detection.score)?d:best),detections[0]):null;
+      // Single fast SSD detection (same model used by live preview — already loaded)
+      const detection=await faceapi
+        .detectSingleFace(c, new faceapi.SsdMobilenetv1Options({minConfidence:0.5}))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
       if(!detection){
-        if(st){st.textContent='❌ No face detected in photo! Please retake.';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
+        if(st){st.textContent='❌ No face detected! Please ensure your face is clearly visible.';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
         sAlt('mAlt','❌ No face detected in the photo. Please retake.','error');
         // Restart camera
-        $('vFeed').style.display='block';frsStartOverlay();
-        return;
-      }
-      // Reject if detection confidence is low
-      if(detection.detection.score<0.7){
-        if(st){st.textContent='⚠️ Face unclear — please ensure good lighting and look directly at camera.';st.style.background='#fff3e0';st.style.color='#e65100';st.style.borderColor='#ffcc80';}
-        sAlt('mAlt','⚠️ Face not clear enough. Ensure good lighting and look directly at the camera.','warning');
-        $('vFeed').style.display='block';frsStartOverlay();
-        return;
-      }
-      // If multiple faces detected, reject (prevent bypass)
-      if(detections.length>1){
-        if(st){st.textContent='🚨 Multiple faces detected! Only the registered trainer can mark attendance.';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
-        sAlt('mAlt','🚨 Multiple faces detected. Only one person should be in front of the camera.','error');
         $('vFeed').style.display='block';frsStartOverlay();
         return;
       }
@@ -2756,10 +2741,10 @@ async function capPhoto(){
         await frsRegisterFace(descriptor,c);
         return;
       } else {
-        // Compare with stored — use strict threshold 0.42
+        // Compare with stored — threshold 0.44: strict yet reliable
         const dist=faceapi.euclideanDistance(descriptor,storedDesc);
-        console.log('FRS distance:',dist,'confidence:',detection.detection.score);
-        if(dist>0.42){
+        console.log('FRS distance:',dist,'score:',detection.detection.score);
+        if(dist>0.44){
           // Face does NOT match — red flash
           if(sc){sc.classList.add('scan-fail');const lbl=sc.querySelector('.scan-label');if(lbl)lbl.textContent='🚨 MISMATCH DETECTED!';}
           if(st){st.textContent='🚨 FACE MISMATCH! This is not the registered trainer!';st.style.background='#fce8e6';st.style.color='#d93025';st.style.borderColor='#f5c6c4';}
