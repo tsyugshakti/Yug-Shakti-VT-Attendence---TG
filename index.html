@@ -940,7 +940,7 @@ tbody tr:nth-child(8){animation-delay:.32s}
     <div class="card" style="margin-top:14px;border-left:4px solid #25D366">
       <div class="ctit" style="gap:8px">📋 Today's Attendance Summary</div>
       <div id="todaySummary" style="font-size:.85rem;color:var(--t2);padding:8px 0">Click "Generate" or "WhatsApp Report" to see today's summary.</div>
-      <button class="btn" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:.88rem;font-weight:700;width:100%;margin-top:8px;cursor:pointer" onclick="sendWhatsAppReport()">📲 Send Today's Report to WhatsApp (+919010809057)</button>
+      <button id="waReportBtn" class="btn" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:.88rem;font-weight:700;width:100%;margin-top:8px;cursor:pointer" onclick="sendWhatsAppReport()">📲 Send Today's Report to WhatsApp</button>
     </div>
   </div>
 
@@ -966,9 +966,21 @@ tbody tr:nth-child(8){animation-delay:.32s}
         <h3>🕐 Attendance Time Window</h3>
         <div class="r2">
           <div class="fg"><label>Opens At</label><input class="fc" type="time" id="sOp" value="06:00"/></div>
-          <div class="fg"><label>Closes At</label><input class="fc" type="time" id="sCl" value="10:30"/></div>
+          <div class="fg"><label>Closes At</label><input class="fc" type="time" id="sCl" value="18:30"/></div>
         </div>
-        <button class="btn bp" onclick="saveSet()">💾 Save</button>
+        <button class="btn bp" onclick="saveSet()">💾 Save Settings</button>
+      </div>
+      <div class="sts">
+        <h3>💬 WhatsApp Reporting Settings</h3>
+        <div class="fg" style="margin-bottom:12px">
+          <label>WhatsApp Recipients (comma-separated, with country code, e.g. 919010809057, 918897430557)</label>
+          <input class="fc" id="sWa" placeholder="919010809057, 918897430557..."/>
+        </div>
+        <div class="fg" style="display:flex;align-items:center;margin-bottom:12px">
+          <input type="checkbox" id="sWaAuto" style="width:20px;height:20px;margin-right:8px;cursor:pointer"/>
+          <label for="sWaAuto" style="cursor:pointer;font-weight:700">Auto-prompt / Auto-send at Close Time</label>
+        </div>
+        <button class="btn bp" onclick="saveSet()">💾 Save Settings</button>
       </div>
       <div class="sts">
         <h3>🔑 Change Admin Password</h3>
@@ -1185,6 +1197,28 @@ tbody tr:nth-child(8){animation-delay:.32s}
     <img id="pvImg" src="" alt="" style="width:100%;border-radius:11px;max-height:310px;object-fit:contain"/>
     <p id="pvInf" style="margin-top:10px;font-size:.81rem;color:var(--t2)"></p>
     <button class="btn bo bfull" style="margin-top:12px" onclick="closeModal('pvM')">Close</button>
+  </div>
+</div>
+
+<div class="mov" id="waAutoM">
+  <div class="mbox" style="max-width:380px; text-align:center; padding: 28px 24px;">
+    <div style="font-size:3rem; margin-bottom:12px;">🔔</div>
+    <div class="mti" style="font-size:1.25rem; font-weight:800; color:var(--t); margin-bottom:8px">Attendance Window Closed!</div>
+    <p style="font-size:.86rem; color:var(--t2); margin-bottom:20px; line-height:1.5">
+      Today's attendance window has closed. The daily summary report is ready to be sent to WhatsApp.
+    </p>
+    <div style="background:#f8f9fa; border:1px solid var(--bd); border-radius:10px; padding:12px; margin-bottom:20px; font-size:.82rem; color:var(--t2); text-align:left">
+      <div style="font-weight:700;margin-bottom:4px">Recipients:</div>
+      <div id="waAutoRecip" style="line-height:1.4;word-break:break-all;color:var(--p)">—</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px">
+      <button class="btn" style="background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; border:none; border-radius:10px; padding:12px; font-size:.9rem; font-weight:700; width:100%; cursor:pointer; justify-content:center" onclick="sendWhatsAppReport(); closeModal('waAutoM');">
+        📲 Send to WhatsApp
+      </button>
+      <button class="btn bo" style="width:100%; justify-content:center" onclick="closeModal('waAutoM')">
+        Dismiss
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1708,9 +1742,16 @@ async function initApp(){
     DB.set('teachersHashed',true);
   }
 
-  const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'06:00',close:'10:30'});
+  const s=DB.get('settings',{name:'Yug Shakti Vocational Education Telangana',lat:17.3850,lng:78.4867,radius:300,open:'06:00',close:'18:30',waPhone:'919010809057, 918897430557, 919959195930, 916281661322',waAuto:true});
   if(!s.name||s.name==='YUG Shakti Vocational Education  - Telangana'||s.name==='YUG Shakti Dept'){
     s.name='Yug Shakti Vocational Education Telangana';
+  }
+  if(!s.waPhone){
+    s.waPhone='919010809057, 918897430557, 919959195930, 916281661322';
+    s.waAuto=true;
+  }
+  if(s.close==='10:30'){
+    s.close='18:30';
   }
   DB.set('settings',s);
   DB.set('att',existing);
@@ -2255,7 +2296,7 @@ function rDash(){
     <div class="sc cg"><span class="si">✅</span><div><div class="sv">${ap.length}</div><div class="sl">Present Today</div></div></div>
     <div class="sc cr"><span class="si">❌</span><div><div class="sv">${tch.length-ap.length}</div><div class="sl">Absent Today</div></div></div>
     <div class="sc co"><span class="si">📊</span><div><div class="sv">${pct}%</div><div class="sl">Rate</div></div></div>`;
-  $('progA').innerHTML=`<div style="display:flex;justify-content:space-between;font-weight:800;font-size:.86rem;margin-bottom:5px"><span>Attendance Rate</span><span style="color:var(--p)">${pct}%</span></div><div class="pw"><div class="pb" style="width:${pct}%"></div></div><p style="color:var(--t2);font-size:.78rem;margin-top:6px">${ap.length} of ${tch.length} trainers present</p><hr style="margin:12px 0;border:none;border-top:1px solid var(--bd)"><div style="font-size:.81rem;line-height:1.9"><div>🕐 Window: ${s.open||'06:00'} – ${s.close||'10:30'}</div><div>📍 Radius: ${s.radius||300}m per school</div><div>👥 Total Staff: ${tch.length}</div></div>`;
+  $('progA').innerHTML=`<div style="display:flex;justify-content:space-between;font-weight:800;font-size:.86rem;margin-bottom:5px"><span>Attendance Rate</span><span style="color:var(--p)">${pct}%</span></div><div class="pw"><div class="pb" style="width:${pct}%"></div></div><p style="color:var(--t2);font-size:.78rem;margin-top:6px">${ap.length} of ${tch.length} trainers present</p><hr style="margin:12px 0;border:none;border-top:1px solid var(--bd)"><div style="font-size:.81rem;line-height:1.9"><div>🕐 Window: ${s.open||'06:00'} – ${s.close||'18:30'}</div><div>📍 Radius: ${s.radius||300}m per school</div><div>👥 Total Staff: ${tch.length}</div></div>`;
   const marked=new Set(ta.map(a=>a.teacherID));
   const absent=tch.filter(t=>!marked.has(t.ph));
   $('absA').innerHTML=absent.length===0?`<div class="alt a-s">🎉 All ${tch.length} trainers marked attendance today!</div>`
@@ -2268,6 +2309,11 @@ function rDash(){
   const logs=DB.get('loginLogs',[]);
   $('logsBody').innerHTML=logs.slice(-10).reverse().map(l=>`<tr><td>${l.photo ? `<img class="pthmb" src="${l.photo}" onclick="vPh('${l.photo}','${l.name}','Login Attempt - ${l.ts}')">` : '—'}</td><td><strong>${l.ts}</strong></td><td><span class="badge bg-b">${l.ph}</span></td><td><strong>${l.name}</strong></td><td style="color:var(--t2);font-size:.78rem">${l.details}</td><td><span class="badge ${l.status==='Success'?'bg-g':'bg-r'}">${l.status==='Success'?'✅ Success':'❌ Failed'}</span></td></tr>`).join('')
   ||`<tr><td colspan="6"><div class="emp"><div class="ei">🔑</div><p>No login attempts recorded yet</p></div></td></tr>`;
+
+  const waPhone=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+  const numRecipients=waPhone.split(',').map(n=>n.trim()).filter(Boolean).length;
+  const waBtn = $('waReportBtn');
+  if(waBtn) waBtn.textContent = `📲 Send Today's Report to WhatsApp (${numRecipients} Recipients)`;
 }
 
 function rRec(){
@@ -2567,12 +2613,30 @@ function loadSet(){
   if(s.lat)$('sLa').value=s.lat;if(s.lng)$('sLo').value=s.lng;
   if(s.radius)$('sR').value=s.radius;if(s.name)$('sN').value=s.name;
   if(s.open)$('sOp').value=s.open;if(s.close)$('sCl').value=s.close;
+  $('sWa').value=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+  $('sWaAuto').checked=s.waAuto!==false;
 }
 function saveSet(){
   const la=parseFloat($('sLa').value),lo=parseFloat($('sLo').value);
   if(isNaN(la)||isNaN(lo)){sAlt('sAlt','⚠️ Enter valid coordinates or click Use My Location','error');return;}
-  DB.set('settings',{name:$('sN').value||'YUG Dept',lat:la,lng:lo,radius:parseInt($('sR').value)||300,open:$('sOp').value,close:$('sCl').value});
+  const rawList=$('sWa').value||'';
+  const cleanList=rawList.split(',').map(num=>{
+    let cleaned=num.trim().replace(/[^0-9]/g,'');
+    if(cleaned && !cleaned.startsWith('91') && cleaned.length===10) cleaned='91'+cleaned;
+    return cleaned;
+  }).filter(Boolean).join(', ');
+  DB.set('settings',{
+    name:$('sN').value||'YUG Dept',
+    lat:la,
+    lng:lo,
+    radius:parseInt($('sR').value)||300,
+    open:$('sOp').value,
+    close:$('sCl').value,
+    waPhone:cleanList||'919010809057, 918897430557, 919959195930, 916281661322',
+    waAuto:$('sWaAuto').checked
+  });
   sAlt('sAlt','✅ Settings saved!','success');
+  rDash();
 }
 function getMyLoc(){
   sAlt('sAlt','📍 Getting your GPS location...','info');
@@ -2968,9 +3032,42 @@ function sendWhatsAppReport(){
   
   const message=lines.join('\n');
   const encoded=encodeURIComponent(message);
-  const waURL=`https://wa.me/919010809057?text=${encoded}`;
-  window.open(waURL,'_blank');
+  const rawPhoneList=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+  const numbers=rawPhoneList.split(',').map(n=>n.trim().replace(/[^0-9]/g,'')).filter(Boolean);
+  numbers.forEach((num,index)=>{
+    const waURL=`https://wa.me/${num}?text=${encoded}`;
+    setTimeout(()=>{
+      try{window.open(waURL,'_blank');}catch(e){console.error("Auto WhatsApp popup blocked:",e);}
+    },index*400);
+  });
 }
+
+function checkAutoWhatsAppReport(){
+  if(!CU||CU.role!=='admin')return;
+  const s=DB.get('settings',{});
+  if(s.waAuto===false)return;
+  const closeTime=s.close||'18:30';
+  const now=getSecureDate();
+  const hhmm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const todayStr=today();
+  if(hhmm>=closeTime){
+    const lastPrompt=DB.get('lastWaPromptDate','');
+    if(lastPrompt!==todayStr){
+      DB.set('lastWaPromptDate',todayStr);
+      const rawPhoneList=s.waPhone||'919010809057, 918897430557, 919959195930, 916281661322';
+      const formattedList=rawPhoneList.split(',').map(n=>{
+        const num=n.trim();
+        if(num.startsWith('91') && num.length===12) return '+91 '+num.substring(2,7)+' '+num.substring(7);
+        return '+'+num;
+      }).join(', ');
+      const recipEl=$('waAutoRecip');
+      if(recipEl)recipEl.textContent=formattedList;
+      sendWhatsAppReport();
+      openModal('waAutoM');
+    }
+  }
+}
+setInterval(checkAutoWhatsAppReport,15000);
 </script>
 
 <!-- MOTION JS -->
