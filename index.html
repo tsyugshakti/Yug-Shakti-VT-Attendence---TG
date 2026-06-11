@@ -2488,24 +2488,38 @@ function rTch(){
   const pages=Math.ceil(list.length/PP)||1;if(TP>pages)TP=1;
   const sl=list.slice((TP-1)*PP,TP*PP);
   $('tSum').innerHTML=`<p style="font-size:.81rem;color:var(--t2)">Total: <strong>${all.length}</strong> trainers | Showing: <strong>${list.length}</strong> | ✅ Present: <strong style="color:var(--s)">${pIDs.size}</strong> | ❌ Absent: <strong style="color:var(--d)">${all.length-pIDs.size}</strong></p>`;
-  $('tList').innerHTML=sl.length?sl.map(t=>`
+  const perms=DB.get('latePerms',{});
+  $('tList').innerHTML=sl.length?sl.map(t=>{
+    const hasPerm = perms[t.ph + '_' + td];
+    return `
     <div class="tc" style="cursor:pointer" onclick="openTrainer('${t.ph}')">
       <div class="tl">
         <div class="ta">${t.name[0]}</div>
         <div>
-          <div class="tn">${t.name} <span class="badge bg-b">${t.ph}</span> ${pIDs.has(t.ph)?'<span class="badge bg-g">✅</span>':'<span class="badge bg-r">❌</span>'}</div>
+          <div class="tn">${t.name} <span class="badge bg-b">${t.ph}</span> ${pIDs.has(t.ph)?'<span class="badge bg-g">✅</span>':'<span class="badge bg-r">❌</span>'} ${hasPerm?'<span class="badge" style="background:var(--p);color:#fff">🔑 Permitted</span>':''}</div>
           <div class="tsub">${sBadge(t.sector)} 🏫 ${t.school}</div>
           <div class="tsub" style="font-size:.7rem;color:#888">${t.yug||''}</div>
         </div>
       </div>
       <div class="tact" onclick="event.stopPropagation()">
+        ${!hasPerm ? `<button class="btn" style="padding:5px 10px;font-size:.76rem;background:var(--p);color:#fff" onclick="grantLatePerm('${t.ph}')" title="Grant Late FRS Permission">🔑</button>` : ''}
         <button class="btn bo" style="padding:5px 10px;font-size:.76rem" onclick="oEdit('${t.ph}')">✏️</button>
         <button class="btn bd2" style="padding:5px 10px;font-size:.76rem" onclick="delT('${t.ph}')">🗑️</button>
         <button class="btn bp" style="padding:5px 10px;font-size:.76rem" onclick="openTrainer('${t.ph}')">👁️</button>
       </div>
-    </div>`).join('')
+    </div>`;
+  }).join('')
     :`<div class="emp"><div class="ei">👩‍🏫</div><p>No trainers found</p></div>`;
   mkPgr('tPgr',pages,TP,p=>{TP=p;rTch()});
+}
+
+function grantLatePerm(ph) {
+  if(!confirm('Grant Late FRS Check-In Permission to this trainer for today?')) return;
+  const perms = DB.get('latePerms', {});
+  perms[ph + '_' + today()] = true;
+  DB.set('latePerms', perms);
+  alert('Late FRS Check-In Permission granted for today.');
+  rTch();
 }
 
 let vtdCurPage = 1;
@@ -3300,8 +3314,13 @@ function isAttendanceLocked(mode){
     if (hhmm < openTime) {
       return { locked: true, reason: `Check-In opens at ${openTime}.`, openTime, closeTime };
     }
-    if (hhmm >= checkOutStart) {
-      return { locked: true, reason: `Check-In closed at ${checkOutStart}. Evening Check-Out is now active.`, openTime, closeTime };
+    if (hhmm > '09:30') {
+      const perms = DB.get('latePerms', {});
+      const key = typeof CU !== 'undefined' && CU ? CU.ph + '_' + today() : '';
+      if (key && perms[key]) {
+        return { locked: false, reason: `Late Permission Granted.`, openTime, closeTime };
+      }
+      return { locked: true, reason: `Late Check-In requires Admin Permission. Please contact Admin.`, openTime, closeTime };
     }
   } else if (mode === 'checkout') {
     if (hhmm < checkOutStart) {
@@ -3413,7 +3432,10 @@ function subAtt() {
     }
     
     const checkInHourMin = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    const isOnTime = checkInHourMin <= '09:30';
+    let isOnTime = checkInHourMin <= '09:30';
+    
+    const perms = DB.get('latePerms', {});
+    const hasPerm = perms[CU.ph + '_' + todayStr];
     
     if (rec) {
       rec.checkInTime = timeStr;
@@ -3444,7 +3466,7 @@ function subAtt() {
       att.push(rec);
     }
     
-    rec.attendanceType = isOnTime ? 'Pending Check-Out' : 'Late Check-In (Half Day)';
+    rec.attendanceType = isOnTime ? 'Pending Check-Out' : (hasPerm ? 'Late Check-In (Permitted)' : 'Late Check-In (Half Day)');
     DB.set('att', att);
     
     $_('mS2').style.display = 'none';
@@ -3497,10 +3519,12 @@ function subAtt() {
     }
     
     let checkInOnTime = false;
+    const perms = DB.get('latePerms', {});
+    const hasPerm = perms[CU.ph + '_' + todayStr];
     if (rec.checkInTime) {
       const parts = rec.checkInTime.split(':');
       const checkInHourMin = parts[0] + ':' + parts[1];
-      if (checkInHourMin <= '09:30') {
+      if (checkInHourMin <= '09:30' || hasPerm) {
         checkInOnTime = true;
       }
     }
