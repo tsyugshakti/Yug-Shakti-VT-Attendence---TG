@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GeoAttend - Yug shakti Vocational Education - Telangana</title>
+<title>Geo-FRS Portal - Yug shakti Vocational Education - Telangana</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg"/>
 
 <!-- Open Graph / WhatsApp Link Preview Meta Tags -->
-<meta property="og:title" content="GeoAttend - Yug shakti Vocational Education" />
-<meta property="og:description" content="Official GeoAttend portal for Yug Shakti Vocational Education Trainers in Telangana." />
+<meta property="og:title" content="Geo-FRS Portal - Yug shakti Vocational Education" />
+<meta property="og:description" content="Official Geo-FRS Portal for Yug Shakti Vocational Education Trainers in Telangana." />
 <meta property="og:image" itemprop="image" content="https://yugshaktivtattendencetg.vercel.app/favicon.jpg" />
 <meta property="og:url" content="https://yugshaktivtattendencetg.vercel.app/" />
 <meta property="og:type" content="website" />
@@ -393,7 +393,7 @@ tbody td{padding:10px 12px;vertical-align:middle}
 
 
 /* ══════════════════════════════════════════
-   MOTION EFFECTS — GeoAttend
+   MOTION EFFECTS — Geo-FRS Portal
 ══════════════════════════════════════════ */
 
 /* Loader logo float + glow */
@@ -526,7 +526,7 @@ tbody tr:nth-child(8){animation-delay:.32s}
 <body>
 <div id="loader">
   <img src="logo.png" alt="Yug Shakti Logo" style="width:220px;max-width:85%;height:auto;object-fit:contain;margin-bottom:20px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15))">
-  <h1>GeoAttend</h1>
+  <h1>Geo-FRS Portal</h1>
   <p>Yug shakti Vocational Education - Telangana</p>
   <div class="spin"></div>
 </div>
@@ -535,7 +535,7 @@ tbody tr:nth-child(8){animation-delay:.32s}
   <div class="lbox">
     <div class="llogo">
       <div class="li" style="margin-bottom:15px"><img src="logo.png" alt="Yug Shakti Logo" style="height:180px;object-fit:contain"></div>
-      <h1>GeoAttend</h1>
+      <h1>Geo-FRS Portal</h1>
       <p>Yug shakti Vocational Education - Telangana</p>
     </div>
     <div class="rtabs">
@@ -557,7 +557,7 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <div style="background:linear-gradient(135deg,#e8f5e9,#e3f2fd);border-radius:12px;padding:10px 13px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid #c8e6c9">
         <span style="font-size:1.4rem">🛡️</span>
         <div>
-          <div style="font-size:.78rem;font-weight:800;color:#1b5e20">SECURE GEOATTEND PORTAL</div>
+          <div style="font-size:.78rem;font-weight:800;color:#1b5e20">SECURE GEO-FRS PORTAL</div>
           <div style="font-size:.7rem;color:#2e7d32;margin-top:1px">📍 GPS Geofencing &nbsp;•&nbsp; 🤖 AI Face ID for Attendance</div>
         </div>
       </div>
@@ -574,7 +574,7 @@ tbody tr:nth-child(8){animation-delay:.32s}
 
 <div id="app" style="display:none">
   <nav class="nav">
-    <div class="nbrand" style="display:flex;align-items:center;gap:6px"><img src="logo.png" alt="Logo" style="height:28px;object-fit:contain"> GeoAttend <span id="nRole" style="font-size:.72rem;opacity:.75;font-weight:400;margin-left:3px"></span></div>
+    <div class="nbrand" style="display:flex;align-items:center;gap:6px"><img src="logo.png" alt="Logo" style="height:28px;object-fit:contain"> Geo-FRS Portal <span id="nRole" style="font-size:.72rem;opacity:.75;font-weight:400;margin-left:3px"></span></div>
     <div class="nr"><span id="clk"></span><span class="nu" id="nUser"></span><button class="blo" onclick="doLogout()">⬅️ Logout</button></div>
   </nav>
   <div class="tbar" id="tabBar"></div>
@@ -822,7 +822,7 @@ tbody tr:nth-child(8){animation-delay:.32s}
   <div class="pg" id="pg-vtsdata">
     <div class="vtd-header" style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
       <div class="vtd-header-inner">
-        <div class="vtd-header-badge">📋 GeoAttend — Yug Shakti</div>
+        <div class="vtd-header-badge">📋 Geo-FRS Portal — Yug Shakti</div>
         <h2>VT's <span>Details</span></h2>
         <p>Vocational Trainers Master Register — Telangana State | 2025–26</p>
         <div class="vtd-header-stats">
@@ -2575,7 +2575,7 @@ function sendTeacherAlert(teacherName, errors){
   const phone='919010809057';
   const ts=getSecureDate().toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'});
   const errList=errors.map((e,i)=>`${i+1}. ${e}`).join('%0a');
-  const msg=encodeURIComponent(`⚠️ Teacher Data Error\n\nTrainer: ${teacherName}\nTime: ${ts}\n\nIssues Found:\n${errors.map((e,i)=>`${i+1}. ${e}`).join('\n')}\n\n🔗 GeoAttend Admin Portal – Please review and correct the data.`);
+  const msg=encodeURIComponent(`⚠️ Teacher Data Error\n\nTrainer: ${teacherName}\nTime: ${ts}\n\nIssues Found:\n${errors.map((e,i)=>`${i+1}. ${e}`).join('\n')}\n\n🔗 Geo-FRS Admin Portal – Please review and correct the data.`);
   const url=`https://wa.me/${phone}?text=${msg}`;
   setTimeout(()=>window.open(url,'_blank'),300);
 }
