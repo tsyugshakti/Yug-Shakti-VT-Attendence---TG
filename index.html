@@ -549,7 +549,6 @@ tbody tr:nth-child(8){animation-delay:.32s}
       <button class="btn bp bfull" onclick="doLogin('admin')">🔐 Admin Login</button>
       <div style="text-align:center;margin-top:12px;display:flex;justify-content:center;gap:18px">
         <a href="#" onclick="forgotPass('admin')" style="font-size:.82rem;color:var(--p);text-decoration:none;font-weight:600">Forgot Password?</a>
-        <a href="#" onclick="clearLoginCache()" style="font-size:.82rem;color:#d93025;text-decoration:none;font-weight:600">🧹 Clear Cache</a>
       </div>
     </div>
     <div id="tForm" style="display:none">
@@ -2121,17 +2120,6 @@ async function forgotPass(role) {
   } else if (role === 'teacher') {
     alert("👩‍🏫 TEACHER RECOVERY\n\nPlease contact your Administrator. The Admin can instantly reset your password from the 'Manage Trainers' tab inside their Dashboard.");
   }
-}
-
-function clearLoginCache(){
-  if(!confirm('🧹 Clear Login Cache?\n\nThis will clear the stored password from your browser memory.\nAfter clearing, you can log in with the default password.\n\nContinue?'))return;
-  localStorage.removeItem('yugg_adminPassHash');
-  localStorage.removeItem('yugg_adminPassHashed');
-  localStorage.removeItem('yugg_adminPass');
-  localStorage.removeItem('yugg_lockout');
-  sessionStorage.clear();
-  alert('✅ Cache cleared!\n\nNow reload the page and login with:\nUsername: admin\nPassword: YugShakti@0707');
-  location.reload();
 }
 function doLogout(){stopCam();resetLoginCheckForm();SESSION.destroy();CU=null;PHOTO=null;LOC=null;$('app').style.display='none';$('loginPg').style.display='flex';}
 function resetAll(){
